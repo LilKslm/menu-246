@@ -4,6 +4,7 @@ import CampSetup from './components/CampSetup'
 import MealPlanner from './components/MealPlanner'
 import OutputGenerator from './components/OutputGenerator'
 import RecipeManagement from './pages/RecipeManagement'
+import appLogoUrl from './assets/app-logo.jpg'
 import './App.css'
 
 export const STEPS = { SETUP: 0, PLAN: 1, OUTPUT: 2 }
@@ -144,16 +145,19 @@ export default function App() {
     <div className="min-h-screen bg-apple-gray font-sans flex flex-col">
       {/* Top navigation bar */}
       <header className="bg-white/80 backdrop-blur-md border-b border-apple-gray-2 sticky top-0 z-50 no-print">
-        <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
-            <img src="/app-logo.jpg" alt="Menu 246" className="w-9 h-9 object-cover rounded-xl flex-shrink-0" />
-            <div>
+        <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4" style={{ paddingLeft: '20px' }}>
+          <button
+            onClick={() => step > STEPS.SETUP && setStep(STEPS.SETUP)}
+            className={`flex items-center gap-2.5 ${step > STEPS.SETUP ? 'cursor-pointer hover:opacity-80 active:opacity-60' : 'cursor-default'} transition-opacity`}
+          >
+            <img src={appLogoUrl} alt="Menu 246" className="w-9 h-9 object-cover rounded-xl flex-shrink-0" />
+            <div className="text-left">
               <h1 className="text-sm font-bold text-apple-dark leading-tight">Menu 246</h1>
               {campSetup.campName && (
                 <p className="text-xs text-apple-secondary leading-none">{campSetup.campName}</p>
               )}
             </div>
-          </div>
+          </button>
 
           {/* Step indicator — hidden on small mobile */}
           <nav className="hidden sm:flex items-center gap-1 flex-1 justify-center">

@@ -127,7 +127,7 @@ export default function MealPlanner({
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* ── Toolbar ─────────────────────────────── */}
       <div className="bg-white border-b border-apple-gray-2 px-3 md:px-4 py-2 flex items-center gap-2 no-print flex-shrink-0">
-        <button onClick={onBack} className="btn-ghost text-apple-secondary text-xs hidden sm:flex">
+        <button onClick={onBack} className="btn-ghost text-apple-secondary text-xs flex">
           ← Retour
         </button>
         <div className="flex-1" />

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import appLogoUrl from '../assets/app-logo.jpg'
 
 function calculateDays(startDate, endDate) {
   if (!startDate || !endDate) return 0
@@ -56,7 +57,7 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
           {/* Hero */}
           <div className="text-center mb-8">
             <img
-              src="/app-logo.jpg"
+              src={appLogoUrl}
               alt="Menu 246"
               className="w-24 h-24 rounded-2xl mx-auto mb-5 shadow-lg object-cover"
             />
@@ -101,37 +102,28 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
               />
             </div>
 
-            {/* Dates — stacked vertically on mobile, side-by-side on larger screens */}
-            <div className="space-y-4">
-              <div>
-                <label className="label">Date de début</label>
+            {/* Dates — compact single-row layout */}
+            <div>
+              <label className="label">Dates du camp</label>
+              <div className={`flex items-center gap-2 border rounded-xl bg-white px-3 transition-all duration-150 ${errors.startDate || errors.endDate ? 'border-red-400 ring-1 ring-red-400' : 'border-apple-gray-3 focus-within:ring-2 focus-within:ring-apple-blue focus-within:border-transparent'}`}>
                 <input
                   type="date"
-                  className={`input-field ${errors.startDate ? 'border-red-400 ring-1 ring-red-400' : ''}`}
+                  style={{ padding: '8px 0', fontSize: '13px', flex: 1, border: 'none', outline: 'none', background: 'transparent', color: '#1C1C1E', minWidth: 0 }}
                   value={form.startDate}
                   onChange={e => set('startDate', e.target.value)}
                 />
-                {errors.startDate && <p className="text-xs text-red-500 mt-1">{errors.startDate}</p>}
-              </div>
-
-              {/* Arrow indicator between dates */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-apple-gray-2" />
-                <span className="text-apple-secondary text-xs font-medium">jusqu'au</span>
-                <div className="flex-1 h-px bg-apple-gray-2" />
-              </div>
-
-              <div>
-                <label className="label">Date de fin</label>
+                <span style={{ color: '#8E8E93', fontSize: '12px', flexShrink: 0 }}>→</span>
                 <input
                   type="date"
-                  className={`input-field ${errors.endDate ? 'border-red-400 ring-1 ring-red-400' : ''}`}
+                  style={{ padding: '8px 0', fontSize: '13px', flex: 1, border: 'none', outline: 'none', background: 'transparent', color: '#1C1C1E', minWidth: 0 }}
                   value={form.endDate}
                   min={form.startDate}
                   onChange={e => set('endDate', e.target.value)}
                 />
-                {errors.endDate && <p className="text-xs text-red-500 mt-1">{errors.endDate}</p>}
               </div>
+              {(errors.startDate || errors.endDate) && (
+                <p className="text-xs text-red-500 mt-1">{errors.startDate || errors.endDate}</p>
+              )}
             </div>
 
             {/* Duration badge */}

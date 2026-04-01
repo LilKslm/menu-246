@@ -1,4 +1,9 @@
-import * as XLSX from 'xlsx'
+// xlsx is lazy-loaded on first call to avoid blocking initial render
+let _XLSX = null
+async function getXLSX() {
+  if (!_XLSX) _XLSX = await import('xlsx')
+  return _XLSX
+}
 
 // Maps Excel category values to internal mealType keys
 const CATEGORY_MAP = {
@@ -71,6 +76,7 @@ function normalizeSection(raw) {
  * Each recipe: { id, name, category, mealType, ingredients: [{ ingredient, section, portion, unit }] }
  */
 export async function loadRecipes() {
+  const XLSX = await getXLSX()
   let arrayBuffer
   if (typeof window !== 'undefined' && window.electronAPI?.loadExcelFile) {
     arrayBuffer = await window.electronAPI.loadExcelFile()

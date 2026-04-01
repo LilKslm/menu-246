@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
+import heroImgImport from '../assets/menu-frontpage.jpg'
 import {
   buildGroceryList,
   generateCSV,
@@ -341,9 +342,9 @@ export default function OutputGenerator({ campSetup, mealPlan, onBack }) {
   const [generated, setGenerated] = useState({})
   const [heroImg, setHeroImg] = useState(null)
 
-  // Load hero image as base64 so it works inside blob: HTML pages
+  // Convert imported image URL to base64 so it works inside blob: HTML pages
   useEffect(() => {
-    fetch('/menu-frontpage.jpg')
+    fetch(heroImgImport)
       .then(r => r.blob())
       .then(blob => {
         const reader = new FileReader()
@@ -389,6 +390,39 @@ export default function OutputGenerator({ campSetup, mealPlan, onBack }) {
     downloadBlob(csv, `${slug}-epicerie.csv`, 'text/csv;charset=utf-8')
     setGenerated(p => ({ ...p, csv: true }))
   }
+
+  async function handleShareGrocery() {
+    const { bySection } = buildGroceryList(mealPlan, campSetup.numPeople)
+    const sections = getOrderedSections(bySection)
+    const lines = []
+    const campLabel = campSetup.campName || 'Camp scout'
+    lines.push(`🏕 Liste d'épicerie — ${campLabel}`)
+    lines.push(`📅 ${campSetup.numDays} jours · 👥 ${campSetup.numPeople} personnes`)
+    lines.push('')
+    for (const section of sections) {
+      lines.push(`── ${section} ──`)
+      for (const item of bySection[section]) {
+        lines.push(`☐ ${item.ingredient}  ${formatAmount(item.totalAmount)} ${item.unit}`.trim())
+      }
+      lines.push('')
+    }
+    const text = lines.join('\n')
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `Épicerie — ${campLabel}`, text })
+        setGenerated(p => ({ ...p, share: true }))
+        return
+      } catch {}
+    }
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(text)
+      setGenerated(p => ({ ...p, share: true }))
+      alert('Liste copiée! Collez-la dans vos Notes.')
+    } catch {
+      alert('Partagez via le bouton CSV.')
+    }
+  }
   function handleGroceryHTML() {
     openHTMLInNewTab(buildGroceryHTML(campSetup, mealPlan, heroImg))
     setGenerated(p => ({ ...p, groceryPrint: true }))
@@ -423,6 +457,7 @@ export default function OutputGenerator({ campSetup, mealPlan, onBack }) {
       desc: `Quantités totales pour ${campSetup.numPeople} personnes, groupées par section avec sous-totaux.`,
       actions: [
         { label: '⬇ CSV', fn: handleDownloadCSV, primary: true },
+        { label: '📱 Partager', fn: handleShareGrocery, primary: false },
       ],
     },
     {
