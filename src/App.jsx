@@ -146,7 +146,7 @@ export default function App() {
       <header className="bg-white/80 backdrop-blur-md border-b border-apple-gray-2 sticky top-0 z-50 no-print">
         <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4">
           <div className="flex items-center gap-2.5">
-            <img src="/menu-frontpage.jpg" alt="Menu 246" className="w-9 h-9 object-cover rounded-xl flex-shrink-0" style={{objectPosition: 'center'}} />
+            <img src="/app-logo.jpg" alt="Menu 246" className="w-9 h-9 object-cover rounded-xl flex-shrink-0" />
             <div>
               <h1 className="text-sm font-bold text-apple-dark leading-tight">Menu 246</h1>
               {campSetup.campName && (
@@ -196,10 +196,10 @@ export default function App() {
             )}
             <button
               onClick={() => setShowRecipeMgmt(true)}
-              className="btn-ghost text-xs text-apple-secondary gap-1 hidden sm:flex"
+              className="btn-ghost text-xs text-apple-secondary gap-1 flex"
               title="Gérer les recettes"
             >
-              📚 Recettes
+              📚 <span className="hidden sm:inline">Recettes</span>
             </button>
           </div>
         </div>

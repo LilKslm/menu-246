@@ -8,10 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
+      includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png', 'app-logo.jpg'],
       manifest: {
-        name: 'Scout Menu Creator',
-        short_name: 'Scout Menu',
+        name: 'Menu 246',
+        short_name: 'Menu 246',
         description: 'Planification des repas pour les camps scouts',
         theme_color: '#007AFF',
         background_color: '#F2F2F7',

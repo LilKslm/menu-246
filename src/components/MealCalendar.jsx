@@ -37,6 +37,12 @@ const MEAL_ROW_HEADER = {
   dinner: 'bg-blue-100 text-blue-800',
   snack: 'bg-purple-100 text-purple-800',
 }
+const MEAL_BORDER = {
+  breakfast: 'border-orange-200',
+  lunch: 'border-green-200',
+  dinner: 'border-blue-200',
+  snack: 'border-purple-200',
+}
 
 function getDayLabel(startDate, dayIndex) {
   const date = new Date(startDate)
@@ -49,67 +55,37 @@ function getDayLabel(startDate, dayIndex) {
   }
 }
 
-// ── Individual calendar cell ─────────────────────
-const CalendarCell = memo(function CalendarCell({
-  dayIndex,
-  mealType,
-  recipes,
-  pendingRecipe,
-  onCellClick,
-  onRemove,
-  onViewRecipe,
+// ── Desktop cell (unchanged from before) ────────────────────
+const DesktopCell = memo(function DesktopCell({
+  dayIndex, mealType, recipes, pendingRecipe, onCellClick, onRemove, onViewRecipe,
 }) {
   const canDrop = pendingRecipe?.mealType === mealType
   const hasRecipes = recipes && recipes.length > 0
 
-  function handleCellClick() {
-    if (canDrop) {
-      onCellClick(dayIndex, mealType)
-    }
-  }
-
   return (
     <div
-      onClick={handleCellClick}
+      onClick={() => canDrop && onCellClick(dayIndex, mealType)}
       className={`
         relative min-h-[64px] rounded-xl border transition-all duration-100 p-2
-        ${hasRecipes
-          ? `${MEAL_FILLED_BG[mealType]} border-transparent`
-          : canDrop
-          ? 'cal-cell-empty can-drop'
-          : 'cal-cell-empty'
-        }
+        ${hasRecipes ? `${MEAL_FILLED_BG[mealType]} border-transparent` : canDrop ? 'cal-cell-empty can-drop' : 'cal-cell-empty'}
         ${canDrop ? 'cursor-pointer' : 'cursor-default'}
       `}
-      title={canDrop ? `Placer "${pendingRecipe?.name}" ici` : undefined}
     >
       {hasRecipes ? (
         <div className="flex flex-col gap-1">
           {recipes.map(recipe => (
-            <div
-              key={recipe.id}
-              className={`group/chip flex items-center gap-1 px-1.5 py-0.5 rounded-lg ${MEAL_CHIP_BG[mealType]} transition-colors`}
-            >
-              <button
-                onClick={e => { e.stopPropagation(); onViewRecipe(recipe) }}
-                className={`text-[11px] font-medium flex-1 text-left truncate leading-snug ${MEAL_TEXT[mealType]}`}
-              >
-                {recipe.name}
-                {recipe.isCustom && <span className="opacity-50 ml-1">·P</span>}
+            <div key={recipe.id} className={`group/chip flex items-center gap-1 px-1.5 py-0.5 rounded-lg ${MEAL_CHIP_BG[mealType]} transition-colors`}>
+              <button onClick={e => { e.stopPropagation(); onViewRecipe(recipe) }}
+                className={`text-[11px] font-medium flex-1 text-left truncate leading-snug ${MEAL_TEXT[mealType]}`}>
+                {recipe.name}{recipe.isCustom && <span className="opacity-50 ml-1">·P</span>}
               </button>
-              <button
-                onClick={e => { e.stopPropagation(); onRemove(dayIndex, mealType, recipe.id) }}
-                className="opacity-0 group-hover/chip:opacity-100 w-3.5 h-3.5 rounded-full bg-white/70 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center text-[9px] flex-shrink-0 transition-all"
-                title={`Retirer ${recipe.name}`}
-              >
-                ✕
-              </button>
+              <button onClick={e => { e.stopPropagation(); onRemove(dayIndex, mealType, recipe.id) }}
+                className="opacity-0 group-hover/chip:opacity-100 w-3.5 h-3.5 rounded-full bg-white/70 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center text-[9px] flex-shrink-0 transition-all">✕</button>
             </div>
           ))}
-          {/* Drop target when a compatible pending recipe exists */}
           {canDrop && (
             <div className={`flex items-center justify-center gap-1 px-1.5 py-0.5 rounded-lg border-2 border-dashed ${MEAL_TEXT[mealType]} border-current opacity-60`}>
-              <span className="text-[10px] font-semibold">+ Ajouter ici</span>
+              <span className="text-[10px] font-semibold">+ Ajouter</span>
             </div>
           )}
         </div>
@@ -121,11 +97,69 @@ const CalendarCell = memo(function CalendarCell({
               <span className={`text-[10px] font-semibold ${MEAL_TEXT[mealType]}`}>Placer ici</span>
             </>
           ) : (
-            <span className="text-[10px] text-apple-gray-3 text-center leading-snug px-1">
-              Sélectionner une recette
-            </span>
+            <span className="text-[10px] text-apple-gray-3 text-center leading-snug px-1">Sélectionner</span>
           )}
         </div>
+      )}
+    </div>
+  )
+})
+
+// ── Mobile meal slot row ─────────────────────────────────────
+const MobileMealSlot = memo(function MobileMealSlot({
+  dayIndex, mealType, recipes, pendingRecipe, onCellClick, onRemove, onViewRecipe,
+}) {
+  const canDrop = pendingRecipe?.mealType === mealType
+  const hasRecipes = recipes && recipes.length > 0
+
+  return (
+    <div
+      onClick={() => canDrop && onCellClick(dayIndex, mealType)}
+      className={`px-4 py-3 border-b last:border-b-0 border-apple-gray-2 transition-colors
+        ${canDrop ? 'bg-apple-blue/5 cursor-pointer' : ''}
+      `}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-base leading-none">{MEAL_ICONS[mealType]}</span>
+        <span className={`text-xs font-bold uppercase tracking-wide ${MEAL_TEXT[mealType]}`}>
+          {MEAL_LABELS[mealType]}
+        </span>
+        {canDrop && (
+          <span className="ml-auto text-xs font-bold text-apple-blue animate-pulse">
+            Tap pour placer ✓
+          </span>
+        )}
+      </div>
+
+      {hasRecipes ? (
+        <div className="flex flex-wrap gap-1.5">
+          {recipes.map(recipe => (
+            <div key={recipe.id}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${MEAL_CHIP_BG[mealType]} border ${MEAL_BORDER[mealType]}`}>
+              <button
+                onClick={e => { e.stopPropagation(); onViewRecipe(recipe) }}
+                className={`text-xs font-semibold ${MEAL_TEXT[mealType]} leading-none`}
+              >
+                {recipe.name}
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); onRemove(dayIndex, mealType, recipe.id) }}
+                className="w-4 h-4 rounded-full bg-white/80 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center text-[10px] flex-shrink-0 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+          {canDrop && (
+            <div className={`flex items-center gap-1 px-3 py-1.5 rounded-xl border-2 border-dashed ${MEAL_BORDER[mealType]} ${MEAL_TEXT[mealType]}`}>
+              <span className="text-xs font-bold">+ Ajouter</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <p className={`text-sm ${canDrop ? `font-semibold ${MEAL_TEXT[mealType]}` : 'text-apple-gray-3 italic'}`}>
+          {canDrop ? '+ Touchez pour placer ici' : 'Non planifié'}
+        </p>
       )}
     </div>
   )
@@ -143,66 +177,91 @@ export default function MealCalendar({
   if (!numDays || numDays === 0) return null
 
   const days = Array.from({ length: numDays }, (_, i) => i)
-  const colWidth = 'minmax(120px, 1fr)'
 
   return (
-    <div className="p-3">
-      <div
-        className="inline-block min-w-full"
-        style={{ minWidth: `${60 + numDays * 128}px` }}
-      >
-        {/* ── Day header row ──────────────────── */}
-        <div
-          className="grid mb-1.5"
-          style={{ gridTemplateColumns: `60px repeat(${numDays}, ${colWidth})` }}
-        >
-          <div />
-          {days.map(i => {
-            const lbl = getDayLabel(startDate, i)
-            return (
-              <div key={i} className="px-1 text-center" title={lbl.full}>
-                <div className="text-[10px] text-apple-secondary capitalize">{lbl.weekday}</div>
-                <div className="text-base font-bold text-apple-dark leading-tight">{lbl.day}</div>
-                <div className="text-[10px] text-apple-secondary capitalize">{lbl.month}</div>
+    <>
+      {/* ── MOBILE view: vertical day cards ── */}
+      <div className="md:hidden p-3 space-y-3">
+        {days.map(dayIdx => {
+          const lbl = getDayLabel(startDate, dayIdx)
+          return (
+            <div key={dayIdx} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-apple-gray-2">
+              {/* Day header */}
+              <div className="bg-apple-gray px-4 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-apple-blue flex flex-col items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xs font-bold uppercase leading-none">{lbl.weekday}</span>
+                  <span className="text-white text-lg font-extrabold leading-tight">{lbl.day}</span>
+                </div>
+                <div>
+                  <p className="font-bold text-apple-dark text-sm capitalize">{lbl.month}</p>
+                  <p className="text-xs text-apple-secondary">Jour {dayIdx + 1}</p>
+                </div>
               </div>
-            )
-          })}
-        </div>
 
-        {/* ── Meal rows ───────────────────────── */}
-        {MEAL_TYPES.map(mealType => (
-          <div
-            key={mealType}
-            className="grid mb-1.5"
-            style={{ gridTemplateColumns: `60px repeat(${numDays}, ${colWidth})` }}
-          >
-            {/* Row label */}
-            <div className="flex items-center justify-center pr-1.5">
-              <div className={`w-full rounded-xl px-1 py-2.5 flex flex-col items-center gap-0.5 ${MEAL_ROW_HEADER[mealType]}`}>
-                <span className="text-sm leading-none">{MEAL_ICONS[mealType]}</span>
-                <span className="text-[9px] font-bold text-center leading-none">
-                  {MEAL_LABELS[mealType]}
-                </span>
+              {/* Meal slots */}
+              <div>
+                {MEAL_TYPES.map(mealType => (
+                  <MobileMealSlot
+                    key={mealType}
+                    dayIndex={dayIdx}
+                    mealType={mealType}
+                    recipes={mealPlan[dayIdx]?.[mealType] ?? []}
+                    pendingRecipe={pendingRecipe}
+                    onCellClick={onCellClick}
+                    onRemove={onRemoveRecipe}
+                    onViewRecipe={onViewRecipe}
+                  />
+                ))}
               </div>
             </div>
-
-            {/* Cells */}
-            {days.map(dayIdx => (
-              <div key={dayIdx} className="px-0.5">
-                <CalendarCell
-                  dayIndex={dayIdx}
-                  mealType={mealType}
-                  recipes={mealPlan[dayIdx]?.[mealType] ?? []}
-                  pendingRecipe={pendingRecipe}
-                  onCellClick={onCellClick}
-                  onRemove={onRemoveRecipe}
-                  onViewRecipe={onViewRecipe}
-                />
-              </div>
-            ))}
-          </div>
-        ))}
+          )
+        })}
       </div>
-    </div>
+
+      {/* ── DESKTOP view: horizontal grid ── */}
+      <div className="hidden md:block p-3">
+        <div className="inline-block min-w-full" style={{ minWidth: `${60 + numDays * 128}px` }}>
+          {/* Day header row */}
+          <div className="grid mb-1.5" style={{ gridTemplateColumns: `60px repeat(${numDays}, minmax(120px, 1fr))` }}>
+            <div />
+            {days.map(i => {
+              const lbl = getDayLabel(startDate, i)
+              return (
+                <div key={i} className="px-1 text-center" title={lbl.full}>
+                  <div className="text-[10px] text-apple-secondary capitalize">{lbl.weekday}</div>
+                  <div className="text-base font-bold text-apple-dark leading-tight">{lbl.day}</div>
+                  <div className="text-[10px] text-apple-secondary capitalize">{lbl.month}</div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Meal rows */}
+          {MEAL_TYPES.map(mealType => (
+            <div key={mealType} className="grid mb-1.5" style={{ gridTemplateColumns: `60px repeat(${numDays}, minmax(120px, 1fr))` }}>
+              <div className="flex items-center justify-center pr-1.5">
+                <div className={`w-full rounded-xl px-1 py-2.5 flex flex-col items-center gap-0.5 ${MEAL_ROW_HEADER[mealType]}`}>
+                  <span className="text-sm leading-none">{MEAL_ICONS[mealType]}</span>
+                  <span className="text-[9px] font-bold text-center leading-none">{MEAL_LABELS[mealType]}</span>
+                </div>
+              </div>
+              {days.map(dayIdx => (
+                <div key={dayIdx} className="px-0.5">
+                  <DesktopCell
+                    dayIndex={dayIdx}
+                    mealType={mealType}
+                    recipes={mealPlan[dayIdx]?.[mealType] ?? []}
+                    pendingRecipe={pendingRecipe}
+                    onCellClick={onCellClick}
+                    onRemove={onRemoveRecipe}
+                    onViewRecipe={onViewRecipe}
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   )
 }

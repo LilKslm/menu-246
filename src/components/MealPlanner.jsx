@@ -64,12 +64,14 @@ export default function MealPlanner({
 
   /**
    * Called when user clicks a calendar cell.
-   * If pendingRecipe exists and mealType matches → place the recipe.
+   * If pendingRecipe exists and mealType matches → place the recipe, return to browser.
    */
   function handleCellClick(dayIndex, mealType) {
     if (pendingRecipe && pendingRecipe.mealType === mealType) {
       onPlaceRecipe(dayIndex, mealType, pendingRecipe)
       setPendingRecipe(null)
+      // On mobile: return to browser so user can immediately pick the next recipe
+      setActiveTab('browser')
     }
   }
 
