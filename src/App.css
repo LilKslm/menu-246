@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-apple-gray font-sans text-apple-dark antialiased;
+    line-height: 1.6;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-apple-gray-3 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-apple-secondary;
+  }
+}
+
+@layer components {
+  /* ── Buttons ─────────────────────────────────── */
+  .btn-primary {
+    @apply bg-apple-blue hover:bg-apple-blue-dark text-white font-semibold
+           px-5 py-2.5 rounded-xl text-sm
+           transition-all duration-150 active:scale-95
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
+           select-none;
+  }
+  .btn-secondary {
+    @apply bg-apple-gray-2 hover:bg-apple-gray-3 text-apple-dark font-semibold
+           px-5 py-2.5 rounded-xl text-sm
+           transition-all duration-150 active:scale-95 select-none;
+  }
+  .btn-ghost {
+    @apply text-apple-blue hover:bg-blue-50 px-3 py-1.5 rounded-lg
+           transition-all duration-150 text-sm font-medium select-none;
+  }
+  .btn-icon {
+    @apply w-8 h-8 flex items-center justify-center rounded-lg
+           text-apple-secondary hover:text-apple-dark hover:bg-apple-gray
+           transition-colors duration-100 select-none;
+  }
+
+  /* ── Cards ───────────────────────────────────── */
+  .card {
+    @apply bg-white rounded-2xl shadow-apple p-5;
+  }
+  .card-compact {
+    @apply bg-white rounded-xl shadow-apple p-3;
+  }
+
+  /* ── Form ────────────────────────────────────── */
+  .input-field {
+    @apply w-full border border-apple-gray-3 rounded-xl px-3.5 py-2.5 text-sm
+           text-apple-dark placeholder-apple-secondary
+           focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent
+           transition-all duration-150 bg-white;
+  }
+  .label {
+    @apply block text-sm font-semibold text-apple-dark mb-1.5;
+  }
+
+  /* ── Badges ──────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  /* ── Section header (collapsible) ────────────── */
+  .section-header {
+    @apply flex items-center justify-between px-3 py-2
+           cursor-pointer hover:bg-apple-gray rounded-lg
+           transition-colors duration-100 select-none;
+  }
+
+  /* ── Recipe card in browser ──────────────────── */
+  .recipe-card {
+    @apply flex items-center gap-2 px-3 py-2 rounded-xl mb-0.5
+           cursor-pointer text-sm transition-all duration-100 select-none
+           hover:bg-apple-gray text-apple-dark;
+  }
+  .recipe-card.is-pending {
+    @apply bg-apple-blue text-white;
+  }
+  .recipe-card.is-viewed {
+    @apply bg-blue-50 text-apple-blue ring-1 ring-apple-blue/20;
+  }
+
+  /* ── Calendar cell ───────────────────────────── */
+  .cal-cell-empty {
+    @apply border-dashed border border-apple-gray-3 bg-white/50
+           hover:bg-white hover:border-apple-gray-2
+           rounded-xl transition-all duration-100 cursor-pointer;
+  }
+  .cal-cell-empty.can-drop {
+    @apply border-apple-blue/40 bg-apple-blue/5
+           hover:bg-apple-blue/10 hover:border-apple-blue/60
+           ring-1 ring-apple-blue/20;
+  }
+  .cal-cell-filled {
+    @apply border-transparent rounded-xl transition-all duration-100;
+  }
+}
+
+/* ── Print styles ─────────────────────────────── */
+@media print {
+  body > #root > * { display: none !important; }
+  #print-menu { display: block !important; padding: 20px; font-family: -apple-system, Helvetica Neue, sans-serif; }
+  .no-print { display: none !important; }
+}
+#print-menu { display: none; }

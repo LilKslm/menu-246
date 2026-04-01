@@ -1,0 +1,8 @@
+const { contextBridge, ipcRenderer } = require('electron')
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  loadExcelFile: () => ipcRenderer.invoke('load-excel-file'),
+  readDropboxRecipes: () => ipcRenderer.invoke('read-dropbox-recipes'),
+  writeDropboxRecipes: (data) => ipcRenderer.invoke('write-dropbox-recipes', data),
+  saveFile: (filename, content) => ipcRenderer.invoke('save-file', filename, content),
+})
