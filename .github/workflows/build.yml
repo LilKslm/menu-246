@@ -38,7 +38,7 @@ jobs:
         run: npm run build
 
       - name: Build desktop app
-        run: npx electron-builder ${{ matrix.build_flag }}
+        run: npx electron-builder ${{ matrix.build_flag }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false   # skip code signing
 
