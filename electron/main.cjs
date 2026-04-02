@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
@@ -29,6 +30,25 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow()
+
+  // ── Auto-updater (production only) ───────────────────────────
+  if (app.isPackaged) {
+    autoUpdater.autoDownload = true
+    autoUpdater.autoInstallOnAppQuit = false
+
+    autoUpdater.on('update-available', info => {
+      win.webContents.send('update-available', { version: info.version })
+    })
+    autoUpdater.on('update-downloaded', () => {
+      win.webContents.send('update-downloaded')
+    })
+    autoUpdater.on('error', err => {
+      console.error('AutoUpdater error:', err.message)
+    })
+
+    autoUpdater.checkForUpdates().catch(err => console.error('Update check failed:', err))
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -36,6 +56,11 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
+})
+
+// ── IPC: install update ───────────────────────────────────────
+ipcMain.handle('install-update', () => {
+  autoUpdater.quitAndInstall(false, true)
 })
 
 // ── IPC: load Excel file ──────────────────────────────────────

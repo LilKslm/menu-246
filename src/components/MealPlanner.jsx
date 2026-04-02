@@ -5,6 +5,7 @@ import RecipeDetails from './RecipeDetails'
 import RecipePickerSheet from './RecipePickerSheet'
 import AddRecipeModal from './AddRecipeModal'
 import DesktopPlanner from './DesktopPlanner'
+import Signature from './Signature'
 
 const MEAL_LABELS = {
   breakfast: 'Déjeuner',
@@ -183,6 +184,8 @@ export default function MealPlanner({
             </div>
           )}
         </div>
+
+        <Signature />
 
         {/* iOS-style bottom tab bar */}
         <div style={{

@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo, memo } from 'react'
 import RecipeQuickAddModal from './RecipeQuickAddModal'
 import AddRecipeModal from './AddRecipeModal'
+import Signature from './Signature'
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS = {
@@ -642,6 +643,7 @@ export default function DesktopPlanner({
             ))
           )}
         </div>
+        <Signature />
       </div>
 
       {/* ── QUICK ADD MODAL ─────────────────────────────────── */}

@@ -5,4 +5,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readDropboxRecipes: () => ipcRenderer.invoke('read-dropbox-recipes'),
   writeDropboxRecipes: (data) => ipcRenderer.invoke('write-dropbox-recipes', data),
   saveFile: (filename, content) => ipcRenderer.invoke('save-file', filename, content),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
+  onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_, info) => cb(info)),
+  onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', () => cb()),
+  removeUpdateListeners: () => {
+    ipcRenderer.removeAllListeners('update-available')
+    ipcRenderer.removeAllListeners('update-downloaded')
+  },
 })

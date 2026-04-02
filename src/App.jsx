@@ -5,8 +5,13 @@ import CampSetup from './components/CampSetup'
 import MealPlanner from './components/MealPlanner'
 import OutputGenerator from './components/OutputGenerator'
 import RecipeManagement from './pages/RecipeManagement'
+import ResumePrompt from './components/ResumePrompt'
+import SaveMenuButton from './components/SaveMenuButton'
+import UpdateNotification from './components/UpdateNotification'
 import appLogoUrl from './assets/app-logo.jpg'
 import './App.css'
+
+const SESSION_KEY = 'scout_session_v1'
 
 export const STEPS = { SETUP: 0, PLAN: 1, OUTPUT: 2 }
 
@@ -60,10 +65,71 @@ export default function App() {
   const [mealPlan, setMealPlan] = useState({})
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [showRecipeMgmt, setShowRecipeMgmt] = useState(false)
+  const [showResume, setShowResume] = useState(false)
+  const [pendingSession, setPendingSession] = useState(null)
   // IDs hidden from THIS device only (persisted in localStorage)
   const [hiddenIds, setHiddenIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('hiddenRecipeIds') || '[]') } catch { return [] }
   })
+
+  // Check for saved session on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY)
+      if (!raw) return
+      const s = JSON.parse(raw)
+      if (s?.campSetup && s?.mealPlan) {
+        setPendingSession(s)
+        setShowResume(true)
+      }
+    } catch {}
+  }, [])
+
+  // Auto-save every 10 seconds when past SETUP
+  useEffect(() => {
+    if (step === STEPS.SETUP) return
+    const id = setInterval(() => {
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({
+          version: 1, campSetup, mealPlan, savedAt: new Date().toISOString(),
+        }))
+      } catch {}
+    }, 10_000)
+    return () => clearInterval(id)
+  }, [step, campSetup, mealPlan])
+
+  function handleResume() {
+    if (!pendingSession) return
+    setCampSetup(pendingSession.campSetup)
+    setMealPlan(pendingSession.mealPlan)
+    setStep(STEPS.PLAN)
+    setShowResume(false)
+    setPendingSession(null)
+  }
+
+  function handleDiscardSession() {
+    localStorage.removeItem(SESSION_KEY)
+    setShowResume(false)
+    setPendingSession(null)
+  }
+
+  function handleImportMenu(importedCampSetup, importedMealPlan) {
+    setCampSetup(importedCampSetup)
+    setMealPlan(importedMealPlan)
+    setStep(STEPS.PLAN)
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        version: 1, campSetup: importedCampSetup, mealPlan: importedMealPlan, savedAt: new Date().toISOString(),
+      }))
+    } catch {}
+  }
+
+  function handleClearProgress() {
+    localStorage.removeItem(SESSION_KEY)
+    setCampSetup({ campName: '', startDate: '', endDate: '', numPeople: 10, numDays: 0 })
+    setMealPlan({})
+    setStep(STEPS.SETUP)
+  }
 
   // Load base recipes (Excel + localStorage)
   useEffect(() => {
@@ -255,7 +321,7 @@ export default function App() {
             ))}
           </nav>
 
-          {/* Camp info chips + recipe mgmt */}
+          {/* Camp info chips + recipe mgmt + save */}
           <div className="ml-auto flex items-center gap-2">
             {step >= STEPS.PLAN && (
               <>
@@ -274,6 +340,14 @@ export default function App() {
             >
               📚 <span className="hidden sm:inline">Recettes</span>
             </button>
+            {step >= STEPS.PLAN && (
+              <SaveMenuButton
+                campSetup={campSetup}
+                mealPlan={mealPlan}
+                onImport={handleImportMenu}
+                onClear={handleClearProgress}
+              />
+            )}
           </div>
         </div>
       </header>
@@ -326,6 +400,18 @@ export default function App() {
           onRecipesChanged={() => { handleRecipesChanged(); setShowRecipeMgmt(false) }}
         />
       )}
+
+      {/* Resume prompt */}
+      {showResume && pendingSession && (
+        <ResumePrompt
+          session={pendingSession}
+          onResume={handleResume}
+          onDiscard={handleDiscardSession}
+        />
+      )}
+
+      {/* Auto-update notification (Electron only) */}
+      <UpdateNotification />
     </div>
   )
 }

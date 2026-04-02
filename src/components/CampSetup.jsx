@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import appLogoUrl from '../assets/app-logo.jpg'
+import Signature from './Signature'
 
 function calculateDays(startDate, endDate) {
   if (!startDate || !endDate) return 0
@@ -242,6 +243,7 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
           <p style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: '#C7C7CC' }}>
             Appuyez sur le logo pour réinitialiser
           </p>
+          <Signature />
         </div>
       </div>
 

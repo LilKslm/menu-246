@@ -1,7 +1,7 @@
 {
   "name": "scout-menu-creator",
   "productName": "Scout Menu Creator",
-  "version": "1.0.0",
+  "version": "1.2.2",
   "description": "Planificateur de menus scouts",
   "private": true,
   "type": "module",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^16.6.0",
+    "electron-updater": "^6.8.3",
     "firebase": "^12.11.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
@@ -38,6 +39,11 @@
   },
   "build": {
     "appId": "com.scout.menu-creator",
+    "publish": {
+      "provider": "github",
+      "owner": "LilKslm",
+      "repo": "menu-246"
+    },
     "productName": "Scout Menu Creator",
     "copyright": "Groupe scout",
     "directories": {
