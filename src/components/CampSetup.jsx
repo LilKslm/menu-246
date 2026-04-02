@@ -149,19 +149,19 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
                   Dates du camp
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <input
                       type="date"
-                      style={{ ...inputStyle(!!errors.startDate), flex: 1 }}
+                      style={{ ...inputStyle(!!errors.startDate), width: '100%', minWidth: 0 }}
                       value={form.startDate}
                       onChange={e => set('startDate', e.target.value)}
                     />
                   </div>
                   <span style={{ color: '#C7C7CC', fontSize: 16, flexShrink: 0 }}>→</span>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <input
                       type="date"
-                      style={{ ...inputStyle(!!errors.endDate), flex: 1 }}
+                      style={{ ...inputStyle(!!errors.endDate), width: '100%', minWidth: 0 }}
                       value={form.endDate}
                       min={form.startDate}
                       onChange={e => set('endDate', e.target.value)}

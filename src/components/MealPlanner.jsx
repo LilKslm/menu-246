@@ -4,6 +4,7 @@ import MealCalendar from './MealCalendar'
 import RecipeDetails from './RecipeDetails'
 import RecipePickerSheet from './RecipePickerSheet'
 import AddRecipeModal from './AddRecipeModal'
+import DesktopPlanner from './DesktopPlanner'
 
 const MEAL_LABELS = {
   breakfast: 'Déjeuner',
@@ -23,50 +24,49 @@ export default function MealPlanner({
   onAddRecipe,
   onEditRecipe,
   onDeleteRecipe,
+  onDeleteLocal,
   onNext,
   onBack,
 }) {
-  // Desktop: pending recipe for click-to-place
-  const [pendingRecipe, setPendingRecipe] = useState(null)
-  // Mobile tab
+  // ── DESKTOP: delegate entirely to DesktopPlanner ──────────
+  // We detect desktop via a media query so the component tree stays clean
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth >= 768
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const handler = e => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  if (isDesktop) {
+    return (
+      <DesktopPlanner
+        recipes={recipes}
+        campSetup={campSetup}
+        mealPlan={mealPlan}
+        onPlaceRecipe={onPlaceRecipe}
+        onRemoveRecipe={onRemoveRecipe}
+        onAddRecipe={onAddRecipe}
+        onDeleteLocal={onDeleteLocal}
+        onBack={onBack}
+        onNext={onNext}
+      />
+    )
+  }
+
+  // ── MOBILE layout (unchanged) ──────────────────────────────
   const [activeTab, setActiveTab] = useState('calendar')
-  // Mobile: bottom sheet picker slot
-  const [pickerSlot, setPickerSlot] = useState(null) // { dayIndex, mealType, dayLabel }
-  // Mobile: add recipe modal (opened from within picker sheet)
+  const [pickerSlot, setPickerSlot] = useState(null)
   const [addModalMealType, setAddModalMealType] = useState(null)
 
   useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') setPendingRecipe(null) }
+    function onKey(e) { if (e.key === 'Escape') setPickerSlot(null) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // Desktop: recipe browser click
-  function handleSelectRecipe(recipe) {
-    onSelectRecipe(recipe)
-    if (pendingRecipe?.id === recipe.id) {
-      setPendingRecipe(null)
-    } else {
-      setPendingRecipe(recipe)
-      setActiveTab('calendar')
-    }
-  }
-
-  function handleSetPendingFromDetails(recipe) {
-    setPendingRecipe(recipe)
-    setActiveTab('calendar')
-  }
-
-  // Desktop: calendar cell click
-  function handleCellClick(dayIndex, mealType) {
-    if (pendingRecipe && pendingRecipe.mealType === mealType) {
-      onPlaceRecipe(dayIndex, mealType, pendingRecipe)
-      setPendingRecipe(null)
-      setActiveTab('browser')
-    }
-  }
-
-  // Mobile: tap a meal slot → open bottom sheet picker
   function handleSlotTap(dayIndex, mealType) {
     const date = new Date(campSetup.startDate)
     date.setDate(date.getDate() + dayIndex)
@@ -74,7 +74,6 @@ export default function MealPlanner({
     setPickerSlot({ dayIndex, mealType, dayLabel })
   }
 
-  // Bottom sheet: add recipes to slot
   function handlePickerAdd(recipesToAdd) {
     if (!pickerSlot) return
     const { dayIndex, mealType } = pickerSlot
@@ -100,8 +99,8 @@ export default function MealPlanner({
     <MealCalendar
       campSetup={campSetup}
       mealPlan={mealPlan}
-      pendingRecipe={pendingRecipe}
-      onCellClick={handleCellClick}
+      pendingRecipe={null}
+      onCellClick={() => {}}
       onSlotTap={handleSlotTap}
       onRemoveRecipe={onRemoveRecipe}
       onViewRecipe={handleViewPlacedRecipe}
@@ -111,12 +110,13 @@ export default function MealPlanner({
   const browserPanel = (
     <RecipeBrowser
       recipes={recipes}
-      pendingRecipe={pendingRecipe}
+      pendingRecipe={null}
       viewedRecipe={selectedRecipe}
-      onSelectRecipe={handleSelectRecipe}
+      onSelectRecipe={onSelectRecipe}
       onAddRecipe={onAddRecipe}
       onEditRecipe={onEditRecipe}
       onDeleteRecipe={onDeleteRecipe}
+      onDeleteLocal={onDeleteLocal}
     />
   )
 
@@ -124,50 +124,17 @@ export default function MealPlanner({
     <RecipeDetails
       recipe={selectedRecipe}
       numPeople={campSetup.numPeople}
-      pendingRecipe={pendingRecipe}
-      onSetPending={handleSetPendingFromDetails}
+      pendingRecipe={null}
+      onSetPending={() => {}}
       onEditRecipe={onEditRecipe}
+      onDeleteLocal={onDeleteLocal}
     />
   )
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-
-      {/* ── DESKTOP toolbar ─────────────────────────────── */}
-      <div className="hidden md:flex bg-white border-b border-apple-gray-2 px-4 py-2 items-center gap-2 no-print flex-shrink-0">
-        <button onClick={onBack} className="btn-ghost text-apple-secondary text-xs">← Retour</button>
-        <div className="flex-1" />
-        <div className="text-xs text-apple-secondary">
-          <span className="font-semibold text-apple-dark">{filledCount}</span>/{totalSlots}
-        </div>
-        <button onClick={onNext} className="btn-primary text-xs py-2 px-4">Exporter →</button>
-      </div>
-
-      {/* Desktop: pending recipe banner */}
-      {pendingRecipe && (
-        <div className="hidden md:flex bg-apple-blue text-white px-4 py-2 items-center gap-3 text-xs no-print flex-shrink-0">
-          <span className="text-base">📌</span>
-          <div className="flex-1 min-w-0">
-            <span className="font-semibold truncate block">{pendingRecipe.name}</span>
-            <span className="opacity-75">Cliquez sur un {MEAL_LABELS[pendingRecipe.mealType]?.toLowerCase()} pour placer</span>
-          </div>
-          <button onClick={() => setPendingRecipe(null)} className="text-white/60 hover:text-white text-sm px-2 py-1 rounded-lg hover:bg-white/10">✕ Annuler</button>
-        </div>
-      )}
-
-      {/* ── DESKTOP: three-panel layout ── */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
-        <div className="w-64 lg:w-72 flex-shrink-0 border-r border-apple-gray-2 bg-white overflow-hidden flex flex-col">
-          {browserPanel}
-        </div>
-        <div className="flex-1 overflow-auto bg-apple-gray">{calendarPanel}</div>
-        <div className="w-72 lg:w-80 flex-shrink-0 border-l border-apple-gray-2 bg-white overflow-hidden flex flex-col">
-          {detailsPanel}
-        </div>
-      </div>
-
-      {/* ── MOBILE layout ─────────────────────────────── */}
-      <div className="flex md:hidden flex-1 overflow-hidden flex-col" style={{ background: '#F2F2F7' }}>
+      {/* Mobile layout */}
+      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', background: '#F2F2F7' }}>
 
         {/* Mobile header bar */}
         <div style={{
@@ -183,7 +150,6 @@ export default function MealPlanner({
             style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#007AFF', fontSize: 15, fontWeight: 500, padding: '4px 0' }}
           >← Retour</button>
           <div style={{ flex: 1 }} />
-          {/* Progress pill */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 60, height: 5, borderRadius: 3, background: '#E5E5EA', overflow: 'hidden' }}>
               <div style={{ width: `${progress}%`, height: '100%', background: '#007AFF', borderRadius: 3, transition: 'width 0.3s' }} />
@@ -288,7 +254,7 @@ export default function MealPlanner({
         />
       )}
 
-      {/* Mobile: Add recipe modal (from within picker) */}
+      {/* Mobile: Add recipe modal */}
       {addModalMealType && (
         <AddRecipeModal
           defaultMealType={addModalMealType}

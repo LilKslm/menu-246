@@ -60,6 +60,10 @@ export default function App() {
   const [mealPlan, setMealPlan] = useState({})
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [showRecipeMgmt, setShowRecipeMgmt] = useState(false)
+  // IDs hidden from THIS device only (persisted in localStorage)
+  const [hiddenIds, setHiddenIds] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('hiddenRecipeIds') || '[]') } catch { return [] }
+  })
 
   // Load base recipes (Excel + localStorage)
   useEffect(() => {
@@ -83,11 +87,17 @@ export default function App() {
     return unsub
   }, [])
 
-  // Merge base + shared whenever either changes
+  // Merge base + shared, then filter hidden IDs for this device
   useEffect(() => {
     if (!baseRecipes) return
-    setRecipes(mergeSharedRecipes(baseRecipes, sharedRecipes))
-  }, [baseRecipes, sharedRecipes])
+    const merged = mergeSharedRecipes(baseRecipes, sharedRecipes)
+    if (!hiddenIds.length) { setRecipes(merged); return }
+    const filtered = {}
+    for (const mt of MEAL_TYPES) {
+      filtered[mt] = (merged[mt] || []).filter(r => !hiddenIds.includes(r.id))
+    }
+    setRecipes(filtered)
+  }, [baseRecipes, sharedRecipes, hiddenIds])
 
   function handleCampSetupComplete(setup) {
     setCampSetup(prev => {
@@ -161,6 +171,16 @@ export default function App() {
 
   function handleDeleteSharedRecipe(recipeId) {
     deleteSharedRecipe(recipeId).catch(console.error)
+  }
+
+  // Hide recipe on THIS device only — doesn't affect other users or Firebase
+  function handleDeleteLocal(recipe) {
+    if (recipe.isCustom) deleteCustomRecipeLocal(recipe.id)
+    const newHidden = [...hiddenIds, recipe.id]
+    setHiddenIds(newHidden)
+    localStorage.setItem('hiddenRecipeIds', JSON.stringify(newHidden))
+    // Also clear from selectedRecipe if it's the one being hidden
+    if (selectedRecipe?.id === recipe.id) setSelectedRecipe(null)
   }
 
   // Delete from the recipe browser sidebar (custom or shared recipes)
@@ -281,6 +301,7 @@ export default function App() {
             onAddRecipe={handleAddRecipe}
             onEditRecipe={handleEditRecipe}
             onDeleteRecipe={handleDeleteRecipe}
+            onDeleteLocal={handleDeleteLocal}
             onNext={() => setStep(STEPS.OUTPUT)}
             onBack={() => setStep(STEPS.SETUP)}
           />

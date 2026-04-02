@@ -29,6 +29,7 @@ export default function RecipeDetails({
   pendingRecipe,
   onSetPending,
   onEditRecipe,
+  onDeleteLocal,
 }) {
   const [editing, setEditing] = useState(false)
 
@@ -72,9 +73,18 @@ export default function RecipeDetails({
                 onClick={() => setEditing(true)}
                 className="btn-icon text-xs flex-shrink-0 mt-0.5"
                 title="Modifier cette recette"
-              >
-                ✎
-              </button>
+              >✎</button>
+            )}
+            {onDeleteLocal && (
+              <button
+                onClick={() => {
+                  if (!confirm(`Masquer "${recipe.name}" de votre bibliothèque?`)) return
+                  onDeleteLocal(recipe)
+                }}
+                className="btn-icon text-xs flex-shrink-0 mt-0.5 text-red-400 hover:text-red-600"
+                title="Masquer de ma bibliothèque"
+                style={{ opacity: 1 }}
+              >🗑</button>
             )}
           </div>
 
