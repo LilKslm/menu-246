@@ -3,6 +3,7 @@ import RecipeBrowser from './RecipeBrowser'
 import MealCalendar from './MealCalendar'
 import RecipeDetails from './RecipeDetails'
 import RecipePickerSheet from './RecipePickerSheet'
+import AddRecipeModal from './AddRecipeModal'
 
 const MEAL_LABELS = {
   breakfast: 'Déjeuner',
@@ -31,6 +32,8 @@ export default function MealPlanner({
   const [activeTab, setActiveTab] = useState('calendar')
   // Mobile: bottom sheet picker slot
   const [pickerSlot, setPickerSlot] = useState(null) // { dayIndex, mealType, dayLabel }
+  // Mobile: add recipe modal (opened from within picker sheet)
+  const [addModalMealType, setAddModalMealType] = useState(null)
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') setPendingRecipe(null) }
@@ -281,6 +284,19 @@ export default function MealPlanner({
           existingRecipes={mealPlan[pickerSlot.dayIndex]?.[pickerSlot.mealType] ?? []}
           onAdd={handlePickerAdd}
           onClose={() => setPickerSlot(null)}
+          onCreateRecipe={(mealType) => setAddModalMealType(mealType)}
+        />
+      )}
+
+      {/* Mobile: Add recipe modal (from within picker) */}
+      {addModalMealType && (
+        <AddRecipeModal
+          defaultMealType={addModalMealType}
+          onSave={recipe => {
+            onAddRecipe(recipe)
+            setAddModalMealType(null)
+          }}
+          onClose={() => setAddModalMealType(null)}
         />
       )}
     </div>

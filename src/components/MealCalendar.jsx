@@ -188,7 +188,8 @@ export default function MealCalendar({
   return (
     <>
       {/* ── MOBILE view: vertical day cards ── */}
-      <div className="md:hidden" style={{ padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="md:hidden" style={{ padding: '16px 12px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {days.map(dayIdx => {
           const lbl = getDayLabel(startDate, dayIdx)
           return (
@@ -233,6 +234,7 @@ export default function MealCalendar({
             </div>
           )
         })}
+      </div>
       </div>
 
       {/* ── DESKTOP view: horizontal grid ── */}

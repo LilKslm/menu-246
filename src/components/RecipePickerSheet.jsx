@@ -29,6 +29,7 @@ export default function RecipePickerSheet({
   existingRecipes = [],
   onAdd,
   onClose,
+  onCreateRecipe,
 }) {
   const [visible, setVisible] = useState(false)
   const [search, setSearch] = useState('')
@@ -198,13 +199,44 @@ export default function RecipePickerSheet({
         {/* Recipe list */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px', WebkitOverflowScrolling: 'touch' }}>
           {allFlat.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px 0', color: '#8E8E93' }}>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#8E8E93' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-              <p style={{ fontWeight: 600, fontSize: 16 }}>Aucun résultat</p>
-              <p style={{ fontSize: 14, marginTop: 4 }}>Essayez d'autres mots-clés</p>
+              <p style={{ fontWeight: 600, fontSize: 16, color: '#1C1C1E' }}>Aucun résultat</p>
+              <p style={{ fontSize: 14, marginTop: 4, marginBottom: 24 }}>Essayez d'autres mots-clés</p>
+              {onCreateRecipe && (
+                <button
+                  onClick={() => { dismiss(); onCreateRecipe(mealType) }}
+                  style={{
+                    padding: '12px 24px', borderRadius: 14, border: '1.5px dashed #007AFF',
+                    background: '#EFF6FF', color: '#007AFF', fontSize: 15, fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >+ Créer une nouvelle recette</button>
+              )}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 8 }}>
+              {onCreateRecipe && (
+                <button
+                  onClick={() => { dismiss(); onCreateRecipe(mealType) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 14px', borderRadius: 16,
+                    border: '1.5px dashed #007AFF', background: '#EFF6FF',
+                    cursor: 'pointer', textAlign: 'left',
+                  }}
+                >
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 10,
+                    background: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, fontSize: 20, color: '#fff', fontWeight: 300,
+                  }}>+</div>
+                  <div>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: '#007AFF', margin: 0 }}>Créer une nouvelle recette</p>
+                    <p style={{ fontSize: 12, color: '#636366', margin: '2px 0 0' }}>Ajouter une recette personnalisée</p>
+                  </div>
+                </button>
+              )}
               {allFlat.map(recipe => {
                 const isSelected = selected.includes(recipe.id)
                 const isAdded = existingRecipes.some(r => r.id === recipe.id)
