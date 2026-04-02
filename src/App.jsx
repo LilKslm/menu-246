@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { loadRecipes, loadCustomRecipes, loadImportedRecipes, saveCustomRecipe, updateCustomRecipe, deleteCustomRecipe as deleteCustomRecipeLocal } from './utils/excelLoader'
 import { subscribeToSharedRecipes, saveSharedRecipe, deleteSharedRecipe } from './utils/firebase'
 import CampSetup from './components/CampSetup'
@@ -8,6 +8,7 @@ import RecipeManagement from './pages/RecipeManagement'
 import ResumePrompt from './components/ResumePrompt'
 import SaveMenuButton from './components/SaveMenuButton'
 import UpdateNotification from './components/UpdateNotification'
+import FeedbackButton from './components/FeedbackButton'
 import appLogoUrl from './assets/app-logo.jpg'
 import './App.css'
 
@@ -85,17 +86,17 @@ export default function App() {
     } catch {}
   }, [])
 
-  // Auto-save every 10 seconds when past SETUP
+  // Auto-save: debounced 500ms after any change to mealPlan or campSetup
   useEffect(() => {
     if (step === STEPS.SETUP) return
-    const id = setInterval(() => {
+    const id = setTimeout(() => {
       try {
         localStorage.setItem(SESSION_KEY, JSON.stringify({
           version: 1, campSetup, mealPlan, savedAt: new Date().toISOString(),
         }))
       } catch {}
-    }, 10_000)
-    return () => clearInterval(id)
+    }, 500)
+    return () => clearTimeout(id)
   }, [step, campSetup, mealPlan])
 
   function handleResume() {
@@ -280,7 +281,7 @@ export default function App() {
     <div className="min-h-screen bg-apple-gray font-sans flex flex-col">
       {/* Top navigation bar */}
       <header className="bg-white/80 backdrop-blur-md border-b border-apple-gray-2 sticky top-0 z-50 no-print">
-        <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-3 flex items-center gap-4" style={{ paddingLeft: '20px' }}>
+        <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-3 flex items-center relative" style={{ paddingLeft: '20px' }}>
           <button
             onClick={() => step > STEPS.SETUP && setStep(STEPS.SETUP)}
             className={`flex items-center gap-2.5 ${step > STEPS.SETUP ? 'cursor-pointer hover:opacity-80 active:opacity-60' : 'cursor-default'} transition-opacity`}
@@ -294,8 +295,8 @@ export default function App() {
             </div>
           </button>
 
-          {/* Step indicator — hidden on small mobile */}
-          <nav className="hidden sm:flex items-center gap-1 flex-1 justify-center">
+          {/* Step indicator — absolutely centered relative to header */}
+          <nav className="hidden sm:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
             {stepLabels.map((label, idx) => (
               <div key={idx} className="flex items-center gap-1">
                 {idx > 0 && (
@@ -322,7 +323,7 @@ export default function App() {
           </nav>
 
           {/* Camp info chips + recipe mgmt + save */}
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2 relative z-10">
             {step >= STEPS.PLAN && (
               <>
                 <span className="badge bg-apple-gray text-apple-dark hidden sm:inline-flex">
@@ -340,6 +341,7 @@ export default function App() {
             >
               📚 <span className="hidden sm:inline">Recettes</span>
             </button>
+            <FeedbackButton />
             {step >= STEPS.PLAN && (
               <SaveMenuButton
                 campSetup={campSetup}

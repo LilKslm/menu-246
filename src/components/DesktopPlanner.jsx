@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, memo } from 'react'
+import { useState, useRef, useMemo, memo, useCallback } from 'react'
 import RecipeQuickAddModal from './RecipeQuickAddModal'
 import AddRecipeModal from './AddRecipeModal'
 import Signature from './Signature'
@@ -117,15 +117,72 @@ const GridCell = memo(function GridCell({
   )
 })
 
+// ── Ingredient tooltip (fixed-position to escape overflow clipping) ──
+function IngredientTooltip({ recipe, anchorRect, mealType }) {
+  const mc = MEAL_COLORS[mealType]
+  const W = 280
+  const OFFSET = 8
+
+  const placeAbove = anchorRect.top > 240
+  const top = placeAbove ? undefined : anchorRect.bottom + OFFSET
+  const bottom = placeAbove ? window.innerHeight - anchorRect.top + OFFSET : undefined
+  let left = anchorRect.left
+  if (left + W > window.innerWidth - 8) left = window.innerWidth - W - 8
+
+  return (
+    <div style={{
+      position: 'fixed', top, bottom, left,
+      width: W, zIndex: 9999,
+      background: '#fff',
+      borderRadius: 12,
+      boxShadow: '0 8px 30px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08)',
+      border: '1px solid #F3F4F6',
+      padding: '12px 14px',
+      animation: 'fadeIn 0.15s ease',
+      pointerEvents: 'none',
+    }}>
+      <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 700, color: '#111827' }}>
+        {recipe.name}
+      </p>
+      {recipe.ingredients?.length > 0 ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 3, maxHeight: 200, overflowY: 'auto' }}>
+          {recipe.ingredients.map((ingr, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, fontSize: 11, color: '#374151', lineHeight: 1.4 }}>
+              <span style={{ color: mc.accent, flexShrink: 0 }}>•</span>
+              <span>
+                {ingr.portion > 0 ? `${ingr.portion}${ingr.unit ? ' ' + ingr.unit : ''} ` : ''}{ingr.ingredient}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>Aucun ingrédient</p>
+      )}
+    </div>
+  )
+}
+
 // ── Recipe pill ──────────────────────────────────────────────
 const RecipePill = memo(function RecipePill({ recipe, mealType, onRemove }) {
   const mc = MEAL_COLORS[mealType]
   const [hovered, setHovered] = useState(false)
+  const [anchorRect, setAnchorRect] = useState(null)
+  const pillRef = useRef(null)
+
+  const handleMouseEnter = useCallback(() => {
+    setHovered(true)
+    if (pillRef.current) setAnchorRect(pillRef.current.getBoundingClientRect())
+  }, [])
+  const handleMouseLeave = useCallback(() => {
+    setHovered(false)
+    setAnchorRect(null)
+  }, [])
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      ref={pillRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       style={{
         display: 'flex', alignItems: 'center', gap: 4,
         padding: '4px 6px 4px 8px',
@@ -156,6 +213,8 @@ const RecipePill = memo(function RecipePill({ recipe, mealType, onRemove }) {
           padding: 0,
         }}
       >✕</button>
+
+      {anchorRect && <IngredientTooltip recipe={recipe} anchorRect={anchorRect} mealType={mealType} />}
     </div>
   )
 })
@@ -164,11 +223,23 @@ const RecipePill = memo(function RecipePill({ recipe, mealType, onRemove }) {
 const CarouselCard = memo(function CarouselCard({ recipe, isPending, onClick, onDelete }) {
   const mc = MEAL_COLORS[recipe.mealType] || MEAL_COLORS.snack
   const [hovered, setHovered] = useState(false)
+  const [anchorRect, setAnchorRect] = useState(null)
+  const cardRef = useRef(null)
+
+  const handleMouseEnter = useCallback(() => {
+    setHovered(true)
+    if (cardRef.current) setAnchorRect(cardRef.current.getBoundingClientRect())
+  }, [])
+  const handleMouseLeave = useCallback(() => {
+    setHovered(false)
+    setAnchorRect(null)
+  }, [])
 
   return (
     <div
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      ref={cardRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       style={{ position: 'relative', flexShrink: 0 }}
     >
       <button
@@ -230,6 +301,11 @@ const CarouselCard = memo(function CarouselCard({ recipe, isPending, onClick, on
           }}
           title="Masquer de ma bibliothèque"
         >🗑</button>
+      )}
+
+      {/* Ingredient tooltip on hover */}
+      {anchorRect && (
+        <IngredientTooltip recipe={recipe} anchorRect={anchorRect} mealType={recipe.mealType} />
       )}
     </div>
   )
@@ -322,62 +398,52 @@ export default function DesktopPlanner({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: '#F9FAFB' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', background: '#F9FAFB' }}>
 
       {/* ── HEADER ─────────────────────────────────────────── */}
       <header style={{
-        height: 60, flexShrink: 0,
+        height: 100, flexShrink: 0,
         background: '#fff',
         borderBottom: '1px solid #E5E7EB',
-        display: 'flex', alignItems: 'center',
-        padding: '0 24px', gap: 16,
+        display: 'grid',
+        gridTemplateColumns: '20% 60% 20%',
+        alignItems: 'center',
+        padding: '0 24px',
         zIndex: 10,
       }}>
-        <button
-          onClick={onBack}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            padding: '6px 12px', borderRadius: 8, border: 'none',
-            background: '#F3F4F6', color: '#374151',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            transition: 'background 0.15s',
-            flexShrink: 0,
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = '#E5E7EB'}
-          onMouseLeave={e => e.currentTarget.style.background = '#F3F4F6'}
-        >
-          ← Retour
-        </button>
-
-        {/* Camp info */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <h1 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>
-            {campName || 'Planification des repas'}
-          </h1>
-          {formatDateRange() && (
-            <span style={{ fontSize: 13, color: '#6B7280', fontWeight: 500 }}>
-              · {formatDateRange()}
-            </span>
-          )}
-          <span style={{
-            fontSize: 12, fontWeight: 600,
-            background: '#EFF6FF', color: '#2563EB',
-            padding: '3px 8px', borderRadius: 20,
-          }}>
-            {numPeople} pers.
-          </span>
-          <span style={{
-            fontSize: 12, fontWeight: 600,
-            background: '#F3F4F6', color: '#374151',
-            padding: '3px 8px', borderRadius: 20,
-          }}>
-            {numDays}j
-          </span>
+        {/* LEFT — back button */}
+        <div>
+          <button
+            onClick={onBack}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 14px', borderRadius: 8, border: 'none',
+              background: '#F3F4F6', color: '#374151',
+              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#E5E7EB'}
+            onMouseLeave={e => e.currentTarget.style.background = '#F3F4F6'}
+          >
+            ← Retour
+          </button>
         </div>
 
-        {/* Right actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          {/* Progress */}
+        {/* CENTER — camp info */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>
+            {formatDateRange() || campName || '—'}
+          </div>
+          <div style={{ fontSize: 16, color: '#6B7280', fontWeight: 400, marginTop: 2 }}>
+            {numPeople} personne{numPeople !== 1 ? 's' : ''}
+          </div>
+          <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 1 }}>
+            Planification des repas
+          </div>
+        </div>
+
+        {/* RIGHT — progress + export */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{ width: 60, height: 4, borderRadius: 2, background: '#E5E7EB', overflow: 'hidden' }}>
               <div style={{
@@ -432,7 +498,7 @@ export default function DesktopPlanner({
       )}
 
       {/* ── CALENDAR GRID ──────────────────────────────────── */}
-      <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', position: 'relative' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: `80px repeat(${numDays}, minmax(140px, 1fr))`,
@@ -531,10 +597,12 @@ export default function DesktopPlanner({
         flexShrink: 0,
         background: '#fff',
         borderTop: '1px solid #E5E7EB',
-        padding: '12px 24px 16px',
+        padding: '10px 24px 12px',
+        display: 'flex',
+        flexDirection: 'column',
       }}>
         {/* Carousel toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
           {/* Search */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 8,
