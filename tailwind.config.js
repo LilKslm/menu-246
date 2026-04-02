@@ -11,6 +11,9 @@ export default {
         'apple-gray-3': '#D1D1D6',
         'apple-dark': '#1C1C1E',
         'apple-secondary': '#636366',
+        'apple-tertiary': '#8E8E93',
+        'apple-red': '#FF3B30',
+        'apple-green': '#34C759',
       },
       fontFamily: {
         sans: [

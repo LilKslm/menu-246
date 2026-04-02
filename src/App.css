@@ -6,22 +6,49 @@
   body {
     @apply bg-apple-gray font-sans text-apple-dark antialiased;
     line-height: 1.6;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
   }
 
   * {
     box-sizing: border-box;
   }
 
+  /* iOS safe area support */
+  .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-area-pt { padding-top: env(safe-area-inset-top); }
+
+  /* Prevent iOS input zoom (must be 16px+) */
+  input, select, textarea {
+    font-size: 16px;
+  }
+
+  /* Remove iOS input styling */
+  input[type="text"], input[type="number"], input[type="search"], input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
   ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 4px;
+    height: 4px;
   }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
     @apply bg-apple-gray-3 rounded-full;
   }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-apple-secondary;
+
+  /* Smooth spring animation for sheet modals */
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 }
 

@@ -29,9 +29,8 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
     const errs = {}
     if (!form.startDate) errs.startDate = 'Requis'
     if (!form.endDate) errs.endDate = 'Requis'
-    if (form.startDate && form.endDate && new Date(form.endDate) < new Date(form.startDate)) {
-      errs.endDate = 'La date de fin doit être après la date de début'
-    }
+    if (form.startDate && form.endDate && new Date(form.endDate) < new Date(form.startDate))
+      errs.endDate = 'La date de fin doit être après le début'
     if (!form.numPeople || form.numPeople < 1) errs.numPeople = 'Minimum 1 personne'
     if (numDays > 21) errs.endDate = 'Maximum 21 jours'
     return errs
@@ -40,143 +39,216 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
   function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs)
-      return
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
     onComplete({ ...form, numPeople: parseInt(form.numPeople, 10), numDays })
   }
 
   const canProceed = !recipesLoading && !recipesError
 
+  const inputStyle = (hasError) => ({
+    width: '100%',
+    padding: '14px 16px',
+    fontSize: 16,
+    borderRadius: 12,
+    border: `1.5px solid ${hasError ? '#FF3B30' : '#E5E5EA'}`,
+    background: '#fff',
+    color: '#1C1C1E',
+    outline: 'none',
+    boxSizing: 'border-box',
+    WebkitAppearance: 'none',
+    transition: 'border-color 0.15s',
+  })
+
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="min-h-full flex flex-col items-center justify-center px-4 py-8">
-        <div className="w-full max-w-sm">
+    <div style={{ flex: 1, overflowY: 'auto', background: '#F2F2F7', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px' }}>
+        <div style={{ width: '100%', maxWidth: 390 }}>
 
           {/* Hero */}
-          <div className="text-center mb-8">
+          <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <img
               src={appLogoUrl}
               alt="Menu 246"
-              className="w-24 h-24 rounded-2xl mx-auto mb-5 shadow-lg object-cover cursor-pointer active:opacity-70 transition-opacity"
-              onClick={() => window.location.reload(true)}
-              title="Appuyer pour mettre à jour"
+              style={{
+                width: 96, height: 96, borderRadius: 22,
+                objectFit: 'cover', margin: '0 auto 20px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
+                cursor: 'pointer',
+                display: 'block',
+                transition: 'transform 0.15s',
+              }}
+              onClick={async () => {
+                if (!confirm('Recommencer à zéro?\n\nCeci effacera tous vos menus et données locales.')) return
+                if ('caches' in window) {
+                  const keys = await caches.keys()
+                  await Promise.all(keys.map(k => caches.delete(k)))
+                }
+                if ('serviceWorker' in navigator) {
+                  const regs = await navigator.serviceWorker.getRegistrations()
+                  await Promise.all(regs.map(r => r.unregister()))
+                }
+                localStorage.clear()
+                if ('indexedDB' in window) {
+                  const dbs = await indexedDB.databases?.() ?? []
+                  dbs.forEach(db => db.name && indexedDB.deleteDatabase(db.name))
+                }
+                window.location.reload(true)
+              }}
             />
-            <h2 className="text-2xl font-extrabold text-apple-dark mb-2">Menu 246</h2>
-            <p className="text-apple-secondary text-sm leading-relaxed">
-              Planifiez les repas de votre camp et générez votre liste d'épicerie.
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1C1C1E', margin: '0 0 6px', letterSpacing: -0.5 }}>Menu 246</h1>
+            <p style={{ fontSize: 15, color: '#636366', margin: 0, lineHeight: 1.5 }}>
+              Planifiez les repas de votre camp
             </p>
           </div>
 
-          {/* Recipe loading status */}
+          {/* Recipe status */}
           {recipesLoading && (
-            <div className="mb-5 flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-700">
-              <svg className="animate-spin h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, background: '#EFF6FF', borderRadius: 14, padding: '12px 16px' }}>
+              <svg style={{ animation: 'spin 1s linear infinite', width: 16, height: 16, flexShrink: 0 }} viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="#3B82F6" strokeWidth="3" opacity="0.25"/>
+                <path d="M4 12a8 8 0 018-8" stroke="#3B82F6" strokeWidth="3" strokeLinecap="round"/>
               </svg>
-              Chargement des recettes…
+              <span style={{ fontSize: 14, color: '#1D4ED8', fontWeight: 500 }}>Chargement des recettes…</span>
             </div>
           )}
           {recipesError && (
-            <div className="mb-5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+            <div style={{ marginBottom: 20, background: '#FFF1F0', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#DC2626' }}>
               <strong>Erreur:</strong> {recipesError}
             </div>
           )}
           {!recipesLoading && !recipesError && (
-            <div className="mb-5 flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700">
-              <span>✓</span> Recettes chargées
+            <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8, background: '#F0FDF4', borderRadius: 14, padding: '12px 16px' }}>
+              <span style={{ fontSize: 15 }}>✓</span>
+              <span style={{ fontSize: 14, color: '#16A34A', fontWeight: 500 }}>Recettes chargées</span>
             </div>
           )}
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="card space-y-5">
+          {/* Form card */}
+          <form onSubmit={handleSubmit}>
+            <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
 
-            <div>
-              <label className="label">Nom du camp <span className="text-apple-secondary font-normal">(optionnel)</span></label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="ex: Camp Été 2025"
-                value={form.campName}
-                onChange={e => set('campName', e.target.value)}
-              />
-            </div>
-
-            {/* Dates — compact single-row layout */}
-            <div>
-              <label className="label">Dates du camp</label>
-              <div className={`flex items-center gap-2 border rounded-xl bg-white px-3 transition-all duration-150 ${errors.startDate || errors.endDate ? 'border-red-400 ring-1 ring-red-400' : 'border-apple-gray-3 focus-within:ring-2 focus-within:ring-apple-blue focus-within:border-transparent'}`}>
+              {/* Camp name */}
+              <div style={{ padding: '20px 20px 0' }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#636366', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Nom du camp
+                </label>
                 <input
-                  type="date"
-                  style={{ padding: '8px 0', fontSize: '13px', flex: 1, border: 'none', outline: 'none', background: 'transparent', color: '#1C1C1E', minWidth: 0 }}
-                  value={form.startDate}
-                  onChange={e => set('startDate', e.target.value)}
-                />
-                <span style={{ color: '#8E8E93', fontSize: '12px', flexShrink: 0 }}>→</span>
-                <input
-                  type="date"
-                  style={{ padding: '8px 0', fontSize: '13px', flex: 1, border: 'none', outline: 'none', background: 'transparent', color: '#1C1C1E', minWidth: 0 }}
-                  value={form.endDate}
-                  min={form.startDate}
-                  onChange={e => set('endDate', e.target.value)}
+                  type="text"
+                  style={inputStyle(false)}
+                  placeholder="Camp Été 2025 (optionnel)"
+                  value={form.campName}
+                  onChange={e => set('campName', e.target.value)}
                 />
               </div>
-              {(errors.startDate || errors.endDate) && (
-                <p className="text-xs text-red-500 mt-1">{errors.startDate || errors.endDate}</p>
+
+              <div style={{ height: 1, background: '#F2F2F7', margin: '20px 0 0' }} />
+
+              {/* Dates */}
+              <div style={{ padding: '20px 20px 0' }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#636366', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Dates du camp
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="date"
+                      style={{ ...inputStyle(!!errors.startDate), flex: 1 }}
+                      value={form.startDate}
+                      onChange={e => set('startDate', e.target.value)}
+                    />
+                  </div>
+                  <span style={{ color: '#C7C7CC', fontSize: 16, flexShrink: 0 }}>→</span>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="date"
+                      style={{ ...inputStyle(!!errors.endDate), flex: 1 }}
+                      value={form.endDate}
+                      min={form.startDate}
+                      onChange={e => set('endDate', e.target.value)}
+                    />
+                  </div>
+                </div>
+                {(errors.startDate || errors.endDate) && (
+                  <p style={{ fontSize: 12, color: '#FF3B30', marginTop: 6 }}>{errors.startDate || errors.endDate}</p>
+                )}
+              </div>
+
+              {/* Duration badge */}
+              {numDays > 0 && (
+                <div style={{ margin: '16px 20px 0', background: '#EFF6FF', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 32, fontWeight: 800, color: '#007AFF', lineHeight: 1 }}>{numDays}</span>
+                  <span style={{ fontSize: 15, color: '#007AFF', fontWeight: 500 }}>jour{numDays > 1 ? 's' : ''} de camp</span>
+                </div>
               )}
+
+              <div style={{ height: 1, background: '#F2F2F7', margin: '20px 0 0' }} />
+
+              {/* Participants */}
+              <div style={{ padding: '20px 20px 20px' }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#636366', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                  Participants
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => set('numPeople', Math.max(1, (parseInt(form.numPeople, 10) || 1) - 1))}
+                    style={{
+                      width: 48, height: 48, borderRadius: 14, border: 'none', cursor: 'pointer',
+                      background: '#F2F2F7', color: '#1C1C1E', fontSize: 22, fontWeight: 300,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      transition: 'background 0.1s',
+                    }}
+                  >−</button>
+                  <input
+                    type="number"
+                    style={{ ...inputStyle(!!errors.numPeople), textAlign: 'center', fontSize: 20, fontWeight: 700, flex: 1 }}
+                    value={form.numPeople}
+                    min="1" max="500"
+                    onChange={e => set('numPeople', e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => set('numPeople', (parseInt(form.numPeople, 10) || 0) + 1)}
+                    style={{
+                      width: 48, height: 48, borderRadius: 14, border: 'none', cursor: 'pointer',
+                      background: '#F2F2F7', color: '#1C1C1E', fontSize: 22, fontWeight: 300,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}
+                  >+</button>
+                </div>
+                {errors.numPeople && <p style={{ fontSize: 12, color: '#FF3B30', marginTop: 6 }}>{errors.numPeople}</p>}
+              </div>
             </div>
 
-            {/* Duration badge */}
-            {numDays > 0 && (
-              <div className="bg-apple-blue/10 rounded-xl px-4 py-3 text-center">
-                <span className="font-extrabold text-apple-blue text-2xl">{numDays}</span>
-                <span className="text-apple-blue text-sm ml-1.5">
-                  jour{numDays > 1 ? 's' : ''} de camp
-                </span>
-              </div>
-            )}
-
-            <div>
-              <label className="label">Nombre de participants</label>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => set('numPeople', Math.max(1, (parseInt(form.numPeople, 10) || 1) - 1))}
-                  className="w-11 h-11 rounded-xl bg-apple-gray hover:bg-apple-gray-2 text-apple-dark font-bold text-xl flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  −
-                </button>
-                <input
-                  type="number"
-                  className={`input-field text-center text-lg font-semibold ${errors.numPeople ? 'border-red-400' : ''}`}
-                  value={form.numPeople}
-                  min="1"
-                  max="500"
-                  onChange={e => set('numPeople', e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => set('numPeople', (parseInt(form.numPeople, 10) || 0) + 1)}
-                  className="w-11 h-11 rounded-xl bg-apple-gray hover:bg-apple-gray-2 text-apple-dark font-bold text-xl flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  +
-                </button>
-              </div>
-              {errors.numPeople && <p className="text-xs text-red-500 mt-1">{errors.numPeople}</p>}
-            </div>
-
+            {/* CTA button */}
             <button
               type="submit"
               disabled={!canProceed}
-              className="btn-primary w-full text-base py-3.5"
+              style={{
+                width: '100%', marginTop: 16, padding: '16px',
+                borderRadius: 16, border: 'none', cursor: canProceed ? 'pointer' : 'not-allowed',
+                background: canProceed ? '#007AFF' : '#C7C7CC',
+                color: '#fff', fontSize: 17, fontWeight: 700,
+                letterSpacing: -0.2,
+                transition: 'background 0.15s, transform 0.1s',
+              }}
+              onTouchStart={e => canProceed && (e.currentTarget.style.transform = 'scale(0.97)')}
+              onTouchEnd={e => (e.currentTarget.style.transform = 'scale(1)')}
             >
               {recipesLoading ? 'Chargement…' : 'Commencer →'}
             </button>
           </form>
+
+          <p style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: '#C7C7CC' }}>
+            Appuyez sur le logo pour réinitialiser
+          </p>
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; }
+      `}</style>
     </div>
   )
 }
