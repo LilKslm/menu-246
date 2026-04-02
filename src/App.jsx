@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { loadRecipes, loadCustomRecipes, loadImportedRecipes, saveCustomRecipe, updateCustomRecipe } from './utils/excelLoader'
+import { subscribeToSharedRecipes, saveSharedRecipe, deleteSharedRecipe } from './utils/firebase'
 import CampSetup from './components/CampSetup'
 import MealPlanner from './components/MealPlanner'
 import OutputGenerator from './components/OutputGenerator'
@@ -25,9 +26,26 @@ function createEmptyMealPlan(numDays) {
   return plan
 }
 
+// Merge shared Firebase recipes into the base recipe list
+function mergeSharedRecipes(base, sharedRecipes) {
+  if (!base || !sharedRecipes.length) return base
+  const result = { ...base }
+  for (const r of sharedRecipes) {
+    if (!r.mealType || !result[r.mealType]) continue
+    // Skip if already present (same id)
+    if (result[r.mealType].some(existing => existing.id === r.id)) continue
+    result[r.mealType] = [...result[r.mealType], r].sort((a, b) =>
+      a.name.localeCompare(b.name, 'fr')
+    )
+  }
+  return result
+}
+
 export default function App() {
   const [step, setStep] = useState(STEPS.SETUP)
-  const [recipes, setRecipes] = useState(null)
+  const [baseRecipes, setBaseRecipes] = useState(null) // Excel + custom + imported
+  const [sharedRecipes, setSharedRecipes] = useState([]) // Firebase shared
+  const [recipes, setRecipes] = useState(null) // merged
   const [recipesError, setRecipesError] = useState(null)
   const [recipesLoading, setRecipesLoading] = useState(true)
 
@@ -43,13 +61,14 @@ export default function App() {
   const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [showRecipeMgmt, setShowRecipeMgmt] = useState(false)
 
+  // Load base recipes (Excel + localStorage)
   useEffect(() => {
     setRecipesLoading(true)
     loadRecipes()
       .then(base => {
         const withCustom = loadCustomRecipes(base)
         const merged = loadImportedRecipes(withCustom)
-        setRecipes(merged)
+        setBaseRecipes(merged)
       })
       .catch(err => {
         console.error('Failed to load recipes:', err)
@@ -57,6 +76,18 @@ export default function App() {
       })
       .finally(() => setRecipesLoading(false))
   }, [])
+
+  // Subscribe to Firebase shared recipes (real-time)
+  useEffect(() => {
+    const unsub = subscribeToSharedRecipes(setSharedRecipes)
+    return unsub
+  }, [])
+
+  // Merge base + shared whenever either changes
+  useEffect(() => {
+    if (!baseRecipes) return
+    setRecipes(mergeSharedRecipes(baseRecipes, sharedRecipes))
+  }, [baseRecipes, sharedRecipes])
 
   function handleCampSetupComplete(setup) {
     setCampSetup(prev => {
@@ -89,9 +120,11 @@ export default function App() {
     }))
   }, [])
 
+  // Add recipe: save locally + push to Firebase shared database
   function handleAddRecipe(newRecipe) {
     saveCustomRecipe(newRecipe)
-    setRecipes(prev => {
+    saveSharedRecipe({ ...newRecipe, isShared: true }).catch(console.error)
+    setBaseRecipes(prev => {
       if (!prev) return prev
       return {
         ...prev,
@@ -103,19 +136,17 @@ export default function App() {
   }
 
   function handleEditRecipe(originalRecipe, editedRecipe) {
-    if (originalRecipe.isCustom) {
-      // Update the custom recipe in localStorage and state
+    if (originalRecipe.isCustom || originalRecipe.isShared) {
       updateCustomRecipe(editedRecipe)
-      setRecipes(prev => {
+      saveSharedRecipe({ ...editedRecipe, isShared: true }).catch(console.error)
+      setBaseRecipes(prev => {
         if (!prev) return prev
         const updated = { ...prev }
-        // Remove from old mealType if it changed
         if (originalRecipe.mealType !== editedRecipe.mealType) {
           updated[originalRecipe.mealType] = prev[originalRecipe.mealType].filter(
             r => r.id !== originalRecipe.id
           )
         }
-        // Add/update in new mealType
         const existingList = updated[editedRecipe.mealType] || []
         const withoutOld = existingList.filter(r => r.id !== editedRecipe.id)
         updated[editedRecipe.mealType] = [...withoutOld, editedRecipe].sort((a, b) =>
@@ -124,9 +155,12 @@ export default function App() {
         return updated
       })
     } else {
-      // Fork an Excel recipe as a new custom recipe
       handleAddRecipe(editedRecipe)
     }
+  }
+
+  function handleDeleteSharedRecipe(recipeId) {
+    deleteSharedRecipe(recipeId).catch(console.error)
   }
 
   function handleRecipesChanged() {
@@ -134,7 +168,7 @@ export default function App() {
       .then(base => {
         const withCustom = loadCustomRecipes(base)
         const merged = loadImportedRecipes(withCustom)
-        setRecipes(merged)
+        setBaseRecipes(merged)
       })
       .catch(console.error)
   }
@@ -249,7 +283,9 @@ export default function App() {
       {showRecipeMgmt && recipes && (
         <RecipeManagement
           recipes={recipes}
+          sharedRecipes={sharedRecipes}
           onClose={() => setShowRecipeMgmt(false)}
+          onDeleteSharedRecipe={handleDeleteSharedRecipe}
           onRecipesChanged={() => { handleRecipesChanged(); setShowRecipeMgmt(false) }}
         />
       )}
