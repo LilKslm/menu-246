@@ -29,6 +29,7 @@ export default function RecipeBrowser({
   onSelectRecipe,
   onAddRecipe,
   onEditRecipe,
+  onDeleteRecipe,
 }) {
   const [search, setSearch] = useState('')
   // All sections collapsed by default; expand on click
@@ -152,27 +153,35 @@ export default function RecipeBrowser({
 
                           <span className="flex-1 leading-tight text-xs truncate">{recipe.name}</span>
 
-                          {recipe.isCustom && (
+                          {(recipe.isCustom || recipe.isShared) && (
                             <span className={`text-[9px] px-1.5 py-0.5 rounded-full flex-shrink-0 font-bold ${
                               isPending ? 'bg-white/20 text-white' : 'bg-apple-gray-2 text-apple-secondary'
                             }`}>
-                              Perso
+                              {recipe.createdBy || 'Perso'}
                             </span>
                           )}
 
                           {/* Edit button — appears on hover */}
-                          <button
-                            onClick={e => {
-                              e.stopPropagation()
-                              setEditingRecipe(recipe)
-                            }}
-                            className={`opacity-0 group-hover:opacity-100 btn-icon w-6 h-6 text-xs flex-shrink-0 ${
-                              isPending ? 'text-white/60 hover:text-white hover:bg-white/10' : ''
-                            }`}
-                            title="Modifier la recette"
-                          >
-                            ✎
-                          </button>
+                          {(recipe.isCustom || recipe.isShared) ? (
+                            <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 flex-shrink-0">
+                              <button
+                                onClick={e => { e.stopPropagation(); setEditingRecipe(recipe) }}
+                                className={`btn-icon w-6 h-6 text-xs ${isPending ? 'text-white/60 hover:text-white hover:bg-white/10' : ''}`}
+                                title="Modifier"
+                              >✎</button>
+                              <button
+                                onClick={e => { e.stopPropagation(); onDeleteRecipe && onDeleteRecipe(recipe) }}
+                                className={`btn-icon w-6 h-6 text-xs ${isPending ? 'text-white/60 hover:text-white hover:bg-white/10' : 'text-red-400 hover:text-red-600'}`}
+                                title="Supprimer"
+                              >🗑</button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={e => { e.stopPropagation(); setEditingRecipe(recipe) }}
+                              className={`opacity-0 group-hover:opacity-100 btn-icon w-6 h-6 text-xs flex-shrink-0 ${isPending ? 'text-white/60 hover:text-white hover:bg-white/10' : ''}`}
+                              title="Modifier la recette"
+                            >✎</button>
+                          )}
                         </li>
                       )
                     })}

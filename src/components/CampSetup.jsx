@@ -59,7 +59,9 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
             <img
               src={appLogoUrl}
               alt="Menu 246"
-              className="w-24 h-24 rounded-2xl mx-auto mb-5 shadow-lg object-cover"
+              className="w-24 h-24 rounded-2xl mx-auto mb-5 shadow-lg object-cover cursor-pointer active:opacity-70 transition-opacity"
+              onClick={() => window.location.reload(true)}
+              title="Appuyer pour mettre à jour"
             />
             <h2 className="text-2xl font-extrabold text-apple-dark mb-2">Menu 246</h2>
             <p className="text-apple-secondary text-sm leading-relaxed">

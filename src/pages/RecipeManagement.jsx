@@ -4,6 +4,7 @@ import {
   exportRecipesAsCSV,
   saveImportedRecipes,
   deleteCustomRecipe,
+  saveCustomRecipe,
 } from '../utils/excelLoader'
 
 const MEAL_LABELS = {
@@ -28,6 +29,7 @@ export default function RecipeManagement({
   onClose,
   onRecipesChanged,
   onDeleteSharedRecipe,
+  onSaveSharedLocally,
 }) {
   const [importError, setImportError] = useState(null)
   const [importSuccess, setImportSuccess] = useState(null)
@@ -145,15 +147,28 @@ export default function RecipeManagement({
                         <p className="text-sm font-medium text-apple-dark truncate">{recipe.name}</p>
                         <p className="text-xs text-apple-secondary">
                           {MEAL_LABELS[recipe.mealType]} · {recipe.ingredients?.length ?? 0} ingr.
+                          {recipe.createdBy && <span className="ml-1 text-apple-blue">· {recipe.createdBy}</span>}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleDeleteShared(recipe)}
-                        className="opacity-0 group-hover:opacity-100 btn-icon text-red-400 hover:text-red-600 flex-shrink-0"
-                        title="Supprimer pour tout le monde"
-                      >
-                        🗑
-                      </button>
+                      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => {
+                            saveCustomRecipe({ ...recipe, isCustom: true })
+                            onRecipesChanged()
+                          }}
+                          className="btn-icon text-apple-blue hover:text-blue-700 text-xs"
+                          title="Enregistrer dans ma bibliothèque locale"
+                        >
+                          💾
+                        </button>
+                        <button
+                          onClick={() => handleDeleteShared(recipe)}
+                          className="btn-icon text-red-400 hover:text-red-600"
+                          title="Supprimer pour tout le monde"
+                        >
+                          🗑
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

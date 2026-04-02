@@ -77,7 +77,7 @@ const DesktopCell = memo(function DesktopCell({
             <div key={recipe.id} className={`group/chip flex items-center gap-1 px-1.5 py-0.5 rounded-lg ${MEAL_CHIP_BG[mealType]} transition-colors`}>
               <button onClick={e => { e.stopPropagation(); onViewRecipe(recipe) }}
                 className={`text-[11px] font-medium flex-1 text-left truncate leading-snug ${MEAL_TEXT[mealType]}`}>
-                {recipe.name}{recipe.isCustom && <span className="opacity-50 ml-1">·P</span>}
+                {recipe.name}{(recipe.isCustom || recipe.isShared) && recipe.createdBy && <span className="opacity-50 ml-1">· {recipe.createdBy}</span>}
               </button>
               <button onClick={e => { e.stopPropagation(); onRemove(dayIndex, mealType, recipe.id) }}
                 className="opacity-0 group-hover/chip:opacity-100 w-3.5 h-3.5 rounded-full bg-white/70 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center text-[9px] flex-shrink-0 transition-all">✕</button>

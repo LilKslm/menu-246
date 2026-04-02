@@ -20,6 +20,7 @@ export default function MealPlanner({
   onRemoveRecipe,
   onAddRecipe,
   onEditRecipe,
+  onDeleteRecipe,
   onNext,
   onBack,
 }) {
@@ -99,6 +100,7 @@ export default function MealPlanner({
       onSelectRecipe={handleSelectRecipe}
       onAddRecipe={onAddRecipe}
       onEditRecipe={onEditRecipe}
+      onDeleteRecipe={onDeleteRecipe}
     />
   )
 

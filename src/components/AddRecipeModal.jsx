@@ -23,6 +23,7 @@ function emptyIngredient() {
 
 export default function AddRecipeModal({ defaultMealType, onSave, onClose }) {
   const [name, setName] = useState('')
+  const [createdBy, setCreatedBy] = useState('')
   const [mealType, setMealType] = useState(defaultMealType || 'breakfast')
   const [ingredients, setIngredients] = useState([emptyIngredient()])
   const [errors, setErrors] = useState({})
@@ -46,6 +47,7 @@ export default function AddRecipeModal({ defaultMealType, onSave, onClose }) {
   function validate() {
     const errs = {}
     if (!name.trim()) errs.name = 'Le nom est requis'
+    if (!createdBy.trim()) errs.createdBy = 'Votre prénom est requis'
     if (ingredients.length === 0) errs.ingredients = 'Ajoutez au moins un ingrédient'
     return errs
   }
@@ -72,6 +74,7 @@ export default function AddRecipeModal({ defaultMealType, onSave, onClose }) {
       mealType,
       category: mealType,
       isCustom: true,
+      createdBy: createdBy.trim(),
       ingredients: cleanIngredients,
     }
 
@@ -102,21 +105,37 @@ export default function AddRecipeModal({ defaultMealType, onSave, onClose }) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
-          {/* Recipe name */}
-          <div>
-            <label className="label">Nom de la recette</label>
-            <input
-              type="text"
-              className={`input-field ${errors.name ? 'border-red-400' : ''}`}
-              placeholder="ex: Pâtes à la sauce tomate"
-              value={name}
-              onChange={e => {
-                setName(e.target.value)
-                setErrors(prev => ({ ...prev, name: '' }))
-              }}
-              autoFocus
-            />
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+          {/* Recipe name + author row */}
+          <div className="grid grid-cols-[1fr_auto] gap-3 items-start">
+            <div>
+              <label className="label">Nom de la recette</label>
+              <input
+                type="text"
+                className={`input-field ${errors.name ? 'border-red-400' : ''}`}
+                placeholder="ex: Pâtes à la sauce tomate"
+                value={name}
+                onChange={e => {
+                  setName(e.target.value)
+                  setErrors(prev => ({ ...prev, name: '' }))
+                }}
+                autoFocus
+              />
+              {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+            </div>
+            <div>
+              <label className="label">Votre prénom</label>
+              <input
+                type="text"
+                className={`input-field w-32 ${errors.createdBy ? 'border-red-400' : ''}`}
+                placeholder="ex: Marie"
+                value={createdBy}
+                onChange={e => {
+                  setCreatedBy(e.target.value)
+                  setErrors(prev => ({ ...prev, createdBy: '' }))
+                }}
+              />
+              {errors.createdBy && <p className="text-xs text-red-500 mt-1">{errors.createdBy}</p>}
+            </div>
           </div>
 
           {/* Meal type */}

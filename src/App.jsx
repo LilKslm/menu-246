@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { loadRecipes, loadCustomRecipes, loadImportedRecipes, saveCustomRecipe, updateCustomRecipe } from './utils/excelLoader'
+import { loadRecipes, loadCustomRecipes, loadImportedRecipes, saveCustomRecipe, updateCustomRecipe, deleteCustomRecipe as deleteCustomRecipeLocal } from './utils/excelLoader'
 import { subscribeToSharedRecipes, saveSharedRecipe, deleteSharedRecipe } from './utils/firebase'
 import CampSetup from './components/CampSetup'
 import MealPlanner from './components/MealPlanner'
@@ -163,6 +163,21 @@ export default function App() {
     deleteSharedRecipe(recipeId).catch(console.error)
   }
 
+  // Delete from the recipe browser sidebar (custom or shared recipes)
+  function handleDeleteRecipe(recipe) {
+    if (!confirm(`Supprimer "${recipe.name}" ?`)) return
+    if (recipe.isCustom) deleteCustomRecipeLocal(recipe.id)
+    deleteSharedRecipe(recipe.id).catch(() => {})
+    setBaseRecipes(prev => {
+      if (!prev) return prev
+      const updated = { ...prev }
+      for (const mt of ['breakfast', 'lunch', 'dinner', 'snack']) {
+        updated[mt] = (prev[mt] || []).filter(r => r.id !== recipe.id)
+      }
+      return updated
+    })
+  }
+
   function handleRecipesChanged() {
     loadRecipes()
       .then(base => {
@@ -265,6 +280,7 @@ export default function App() {
             onRemoveRecipe={handleRemoveRecipe}
             onAddRecipe={handleAddRecipe}
             onEditRecipe={handleEditRecipe}
+            onDeleteRecipe={handleDeleteRecipe}
             onNext={() => setStep(STEPS.OUTPUT)}
             onBack={() => setStep(STEPS.SETUP)}
           />

@@ -83,8 +83,10 @@ export default function RecipeDetails({
             <span className={`badge ${MEAL_BADGE[recipe.mealType] || 'bg-apple-gray text-apple-dark'}`}>
               {MEAL_LABELS[recipe.mealType] || recipe.mealType}
             </span>
-            {recipe.isCustom && (
-              <span className="badge bg-apple-gray-2 text-apple-secondary">Personnalisé</span>
+            {(recipe.isCustom || recipe.isShared) && (
+              <span className="badge bg-apple-gray-2 text-apple-secondary">
+                {recipe.createdBy ? `Par ${recipe.createdBy}` : 'Personnalisé'}
+              </span>
             )}
           </div>
 
