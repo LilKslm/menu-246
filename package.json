@@ -1,7 +1,7 @@
 {
   "name": "scout-menu-creator",
   "productName": "Scout Menu Creator",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "Planificateur de menus scouts",
   "private": true,
   "type": "module",
@@ -70,8 +70,20 @@
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] },
-        { "target": "zip", "arch": ["x64", "arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "icon": "build-resources/icon.png",
       "category": "public.app-category.productivity",
