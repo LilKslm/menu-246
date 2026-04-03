@@ -1,7 +1,7 @@
 {
   "name": "scout-menu-creator",
   "productName": "Scout Menu Creator",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "Planificateur de menus scouts",
   "private": true,
   "type": "module",
@@ -42,7 +42,8 @@
     "publish": {
       "provider": "github",
       "owner": "LilKslm",
-      "repo": "menu-246"
+      "repo": "menu-246",
+      "releaseType": "release"
     },
     "productName": "Scout Menu Creator",
     "copyright": "Groupe scout",

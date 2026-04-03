@@ -46,7 +46,19 @@ app.whenReady().then(() => {
       console.error('AutoUpdater error:', err.message)
     })
 
-    autoUpdater.checkForUpdates().catch(err => console.error('Update check failed:', err))
+    // Throttled check: at most once per hour regardless of trigger source
+    let lastUpdateCheck = 0
+    const CHECK_THROTTLE = 60 * 60 * 1000
+    function safeCheckForUpdates() {
+      const now = Date.now()
+      if (now - lastUpdateCheck < CHECK_THROTTLE) return
+      lastUpdateCheck = now
+      autoUpdater.checkForUpdates().catch(err => console.error('Update check failed:', err))
+    }
+
+    safeCheckForUpdates()                                    // on startup
+    setInterval(safeCheckForUpdates, 4 * 60 * 60 * 1000)   // every 4 hours
+    win.on('focus', safeCheckForUpdates)                    // when user returns to app
   }
 
   app.on('activate', () => {
