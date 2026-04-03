@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo, memo, useCallback } from 'react'
 import RecipeQuickAddModal from './RecipeQuickAddModal'
 import AddRecipeModal from './AddRecipeModal'
+import { parseLocalDate } from '../utils/calculations'
 import Signature from './Signature'
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
@@ -24,7 +25,7 @@ const MEAL_COLORS = {
 }
 
 function getDayLabel(startDate, dayIndex) {
-  const date = new Date(startDate)
+  const date = parseLocalDate(startDate)
   date.setDate(date.getDate() + dayIndex)
   return {
     weekday: date.toLocaleDateString('fr-CA', { weekday: 'short' }),
@@ -392,8 +393,8 @@ export default function DesktopPlanner({
   function formatDateRange() {
     if (!sd || !ed) return ''
     const opts = { day: 'numeric', month: 'short' }
-    const s = new Date(sd).toLocaleDateString('fr-CA', opts)
-    const e = new Date(ed).toLocaleDateString('fr-CA', opts)
+    const s = parseLocalDate(sd).toLocaleDateString('fr-CA', opts)
+    const e = parseLocalDate(ed).toLocaleDateString('fr-CA', opts)
     return `${s} – ${e}`
   }
 

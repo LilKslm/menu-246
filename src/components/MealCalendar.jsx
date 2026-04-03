@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { parseLocalDate } from '../utils/calculations'
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
 const MEAL_LABELS = {
@@ -45,7 +46,7 @@ const MEAL_BORDER = {
 }
 
 function getDayLabel(startDate, dayIndex) {
-  const date = new Date(startDate)
+  const date = parseLocalDate(startDate)
   date.setDate(date.getDate() + dayIndex)
   return {
     weekday: date.toLocaleDateString('fr-CA', { weekday: 'short' }),

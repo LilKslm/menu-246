@@ -8,6 +8,7 @@ import {
   formatAmount,
   formatGroceryQty,
   formatGroceryUnit,
+  parseLocalDate,
 } from '../utils/calculations'
 
 const MEAL_LABELS = {
@@ -122,7 +123,7 @@ function buildHeroHTML(campSetup, heroImg, subtitle) {
     : `<div style="width:100%;height:200px;background:linear-gradient(135deg,#1a472a,#2d6a4f);"></div>`
 
   const fmtDate = d => {
-    try { return new Date(d).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }) }
+    try { return parseLocalDate(d).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' }) }
     catch { return d }
   }
   const dateChip = campSetup.startDate && campSetup.endDate

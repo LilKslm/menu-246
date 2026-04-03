@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import appLogoUrl from '../assets/app-logo.jpg'
 import Signature from './Signature'
+import { parseLocalDate } from '../utils/calculations'
 
 function calculateDays(startDate, endDate) {
   if (!startDate || !endDate) return 0
-  const start = new Date(startDate)
-  const end = new Date(endDate)
+  const start = parseLocalDate(startDate)
+  const end = parseLocalDate(endDate)
   if (end < start) return 0
   return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1
 }
@@ -30,7 +31,7 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
     const errs = {}
     if (!form.startDate) errs.startDate = 'Requis'
     if (!form.endDate) errs.endDate = 'Requis'
-    if (form.startDate && form.endDate && new Date(form.endDate) < new Date(form.startDate))
+    if (form.startDate && form.endDate && parseLocalDate(form.endDate) < parseLocalDate(form.startDate))
       errs.endDate = 'La date de fin doit être après le début'
     if (!form.numPeople || form.numPeople < 1) errs.numPeople = 'Minimum 1 personne'
     if (numDays > 21) errs.endDate = 'Maximum 21 jours'

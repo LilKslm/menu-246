@@ -1,3 +1,14 @@
+/**
+ * Parse a YYYY-MM-DD date string in LOCAL timezone (not UTC).
+ * `new Date('2024-04-05')` returns UTC midnight → shows April 4 in EST.
+ * This function returns local midnight so the date always matches what the user typed.
+ */
+export function parseLocalDate(dateStr) {
+  if (!dateStr) return new Date(NaN)
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 // Ordered sections for the grocery list display
 export const SECTION_ORDER = [
   'Fruits et légumes',
@@ -170,7 +181,7 @@ export function generateCSV(campSetup, mealPlan) {
   const campName = campSetup.campName || 'Camp scout'
   lines.push(esc(`Liste d'épicerie — ${campName}`))
   if (campSetup.startDate && campSetup.endDate) {
-    const fmt = d => new Date(d).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })
+    const fmt = d => parseLocalDate(d).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })
     lines.push(esc(`Dates: ${fmt(campSetup.startDate)} au ${fmt(campSetup.endDate)} — ${campSetup.numPeople} personne${campSetup.numPeople > 1 ? 's' : ''}`))
   }
   lines.push('')
@@ -198,11 +209,10 @@ export function generateCSV(campSetup, mealPlan) {
  */
 export function buildMenuSummary(campSetup, mealPlan) {
   const summary = []
-  const start = new Date(campSetup.startDate)
+  const start = parseLocalDate(campSetup.startDate)
 
   for (let i = 0; i < campSetup.numDays; i++) {
-    const date = new Date(start)
-    date.setDate(start.getDate() + i)
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i)
     const slot = mealPlan[i] || {}
     summary.push({
       dayIndex: i,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { parseLocalDate } from '../utils/calculations'
 import RecipeBrowser from './RecipeBrowser'
 import MealCalendar from './MealCalendar'
 import RecipeDetails from './RecipeDetails'
@@ -69,7 +70,7 @@ export default function MealPlanner({
   }, [])
 
   function handleSlotTap(dayIndex, mealType) {
-    const date = new Date(campSetup.startDate)
+    const date = parseLocalDate(campSetup.startDate)
     date.setDate(date.getDate() + dayIndex)
     const dayLabel = date.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' })
     setPickerSlot({ dayIndex, mealType, dayLabel })
