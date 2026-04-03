@@ -40,7 +40,7 @@ const GridCell = memo(function GridCell({
   dayIndex, mealType, recipes, pendingRecipe, onCellClick, onRemove, onOpenModal,
 }) {
   const mc = MEAL_COLORS[mealType]
-  const canDrop = pendingRecipe?.mealType === mealType
+  const canDrop = !!pendingRecipe
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -358,7 +358,7 @@ export default function DesktopPlanner({
   }, [recipes, carouselSearch, carouselFilter])
 
   function handleCellClick(dayIndex, mealType) {
-    if (pendingRecipe?.mealType === mealType) {
+    if (pendingRecipe) {
       onPlaceRecipe(dayIndex, mealType, pendingRecipe)
       setPendingRecipe(null)
     }

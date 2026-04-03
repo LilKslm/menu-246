@@ -8,15 +8,18 @@ export const SECTION_ORDER = [
   'Varia - Congelés',
 ]
 
-// Normalize unit strings for aggregation matching
+// Normalize unit strings for aggregation — converts to base units so g+kg and ml+L share the same key
 function normalizeUnitForAgg(unit) {
   if (!unit) return ''
   const u = unit.trim().toLowerCase()
+  // Mass → g (base unit)
+  if (['kg', 'kilo', 'kilos', 'kilogramme', 'kilogrammes'].includes(u)) return 'g'
+  if (['g', 'gr', 'grs', 'gram', 'grams', 'gramme', 'grammes'].includes(u)) return 'g'
+  // Volume → ml (base unit)
+  if (['l', 'litre', 'litres', 'liter', 'liters'].includes(u)) return 'ml'
+  if (['ml', 'millilitre', 'millilitres', 'milliliter', 'milliliters', 'cc'].includes(u)) return 'ml'
+  // Container/count units → singular canonical form
   const map = {
-    'g': 'g', 'gr': 'g',
-    'ml': 'ml',
-    'l': 'L', 'L': 'L',
-    'kg': 'kg',
     'unité': 'unité', 'unite': 'unité', 'unités': 'unité', 'unites': 'unité',
     'sachet': 'sachet', 'sachets': 'sachet',
     'sac': 'sac', 'sacs': 'sac',
@@ -30,6 +33,35 @@ function normalizeUnitForAgg(unit) {
     'tasse': 'tasse', 'tasses': 'tasse',
   }
   return map[u] ?? u
+}
+
+// Convert a raw quantity to its base unit (g for mass, ml for volume; others unchanged)
+function toBaseQty(qty, rawUnit) {
+  if (!rawUnit) return qty
+  const u = rawUnit.trim().toLowerCase()
+  if (['kg', 'kilo', 'kilos', 'kilogramme', 'kilogrammes'].includes(u)) return qty * 1000
+  if (['l', 'litre', 'litres', 'liter', 'liters'].includes(u)) return qty * 1000
+  return qty
+}
+
+// Format a grocery quantity for display (converts g→kg if ≥1000, ml→L if ≥1000)
+export function formatGroceryQty(totalAmount, baseUnit) {
+  if (baseUnit === 'g' && totalAmount >= 1000) return formatAmount(totalAmount / 1000)
+  if (baseUnit === 'ml' && totalAmount >= 1000) return formatAmount(totalAmount / 1000)
+  return formatAmount(totalAmount)
+}
+
+// Format the display unit for a grocery item (upgrades to larger unit, pluralizes containers)
+export function formatGroceryUnit(totalAmount, baseUnit) {
+  if (baseUnit === 'g' && totalAmount >= 1000) return 'kg'
+  if (baseUnit === 'ml' && totalAmount >= 1000) return 'L'
+  const pluralMap = {
+    sachet: 'sachets', sac: 'sacs', 'boîte': 'boîtes', conserve: 'conserves',
+    portion: 'portions', tranche: 'tranches', paquet: 'paquets',
+    contenant: 'contenants', tasse: 'tasses', 'unité': 'unités',
+  }
+  if (totalAmount !== 1 && pluralMap[baseUnit]) return pluralMap[baseUnit]
+  return baseUnit
 }
 
 /**
@@ -72,11 +104,11 @@ export function buildGroceryList(mealPlan, numPeople) {
             aggregated.set(key, {
               ingredient: ingr.ingredient,
               section: ingr.section || 'Varia',
-              unit: ingr.unit || '',
+              unit: normUnit,
               totalAmount: 0,
             })
           }
-          aggregated.get(key).totalAmount += ingr.portion * numPeople
+          aggregated.get(key).totalAmount += toBaseQty(ingr.portion, ingr.unit) * numPeople
         }
       }
     }
@@ -133,7 +165,7 @@ export function generateCSV(campSetup, mealPlan) {
   for (const section of sections) {
     const items = bySection[section]
     for (const item of items) {
-      lines.push(`${esc(section)},${esc(item.ingredient)},${formatAmount(item.totalAmount)},${esc(item.unit)}`)
+      lines.push(`${esc(section)},${esc(item.ingredient)},${formatGroceryQty(item.totalAmount, item.unit)},${esc(formatGroceryUnit(item.totalAmount, item.unit))}`)
     }
     lines.push(`${esc('')},${esc(`— ${items.length} article${items.length > 1 ? 's' : ''} (${section})`)},${esc('')},${esc('')}`)
     lines.push('')

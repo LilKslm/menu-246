@@ -6,6 +6,8 @@ import {
   buildMenuSummary,
   getOrderedSections,
   formatAmount,
+  formatGroceryQty,
+  formatGroceryUnit,
 } from '../utils/calculations'
 
 const MEAL_LABELS = {
@@ -284,8 +286,8 @@ function buildGroceryHTML(campSetup, mealPlan, heroImg) {
             <span class="item-name">${item.ingredient}</span>
           </label>
         </td>
-        <td style="padding:10px 12px;font-size:13px;font-weight:700;text-align:right;border-bottom:1px solid #F2F2F7;color:#007AFF;white-space:nowrap;">${formatAmount(item.totalAmount)}</td>
-        <td style="padding:10px 12px;font-size:13px;color:#636366;border-bottom:1px solid #F2F2F7;white-space:nowrap;">${item.unit}</td>
+        <td style="padding:10px 12px;font-size:13px;font-weight:700;text-align:right;border-bottom:1px solid #F2F2F7;color:#007AFF;white-space:nowrap;">${formatGroceryQty(item.totalAmount, item.unit)}</td>
+        <td style="padding:10px 12px;font-size:13px;color:#636366;border-bottom:1px solid #F2F2F7;white-space:nowrap;">${formatGroceryUnit(item.totalAmount, item.unit)}</td>
       </tr>`).join('')
 
     return `
@@ -402,7 +404,7 @@ export default function OutputGenerator({ campSetup, mealPlan, onBack }) {
     for (const section of sections) {
       lines.push(`── ${section} ──`)
       for (const item of bySection[section]) {
-        lines.push(`☐ ${item.ingredient}  ${formatAmount(item.totalAmount)} ${item.unit}`.trim())
+        lines.push(`☐ ${item.ingredient}  ${formatGroceryQty(item.totalAmount, item.unit)} ${formatGroceryUnit(item.totalAmount, item.unit)}`.trim())
       }
       lines.push('')
     }
@@ -638,7 +640,7 @@ export default function OutputGenerator({ campSetup, mealPlan, onBack }) {
                             {item.ingredient}
                           </span>
                           <span className={`text-xs font-semibold whitespace-nowrap ${isChecked ? 'text-apple-secondary' : 'text-apple-dark'}`}>
-                            {formatAmount(item.totalAmount)} <span className="font-normal text-apple-secondary">{item.unit}</span>
+                            {formatGroceryQty(item.totalAmount, item.unit)} <span className="font-normal text-apple-secondary">{formatGroceryUnit(item.totalAmount, item.unit)}</span>
                           </span>
                         </label>
                       )
