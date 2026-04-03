@@ -72,7 +72,7 @@ app.on('window-all-closed', () => {
 
 // ── IPC: install update ───────────────────────────────────────
 ipcMain.handle('install-update', () => {
-  autoUpdater.quitAndInstall(false, true)
+  autoUpdater.quitAndInstall(true, true)
 })
 
 // ── IPC: load Excel file ──────────────────────────────────────

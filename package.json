@@ -1,7 +1,7 @@
 {
   "name": "scout-menu-creator",
   "productName": "Scout Menu Creator",
-  "version": "1.2.9",
+  "version": "1.3.0",
   "description": "Planificateur de menus scouts",
   "private": true,
   "type": "module",
@@ -63,10 +63,7 @@
       }
     ],
     "win": {
-      "target": [
-        "nsis",
-        "portable"
-      ],
+      "target": ["nsis"],
       "icon": "build-resources/icon.png"
     },
     "mac": {
