@@ -228,7 +228,7 @@ function buildDetailedMenuHTML(campSetup, mealPlan, heroImg) {
                 <tr style="border-bottom:1px solid #E5E5EA;">
                   <th style="text-align:left;padding:3px 8px 3px 0;font-size:9px;color:#8E8E93;font-weight:700;text-transform:uppercase;">Ingrédient</th>
                   <th style="text-align:right;padding:3px 8px;font-size:9px;color:#8E8E93;font-weight:700;text-transform:uppercase;">×1</th>
-                  <th style="text-align:right;padding:3px 0;font-size:9px;color:#8E8E93;font-weight:700;text-transform:uppercase;">×${n}</th>
+                  <th style="text-align:right;padding:3px 0 3px 8px;font-size:9px;color:#8E8E93;font-weight:700;text-transform:uppercase;">×${n}</th>
                 </tr>
               </thead>
               <tbody>${ingrRows}</tbody>
@@ -301,8 +301,8 @@ function buildGroceryHTML(campSetup, mealPlan, heroImg) {
           <thead>
             <tr style="background:#F9F9FB;">
               <th style="text-align:left;padding:8px 12px;font-size:10px;color:#8E8E93;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid #E5E5EA;">Ingrédient</th>
-              <th style="text-align:right;padding:8px 12px;font-size:10px;color:#8E8E93;font-weight:700;text-transform:uppercase;border-bottom:1px solid #E5E5EA;">Quantité</th>
-              <th style="padding:8px 12px;font-size:10px;color:#8E8E93;font-weight:700;text-transform:uppercase;border-bottom:1px solid #E5E5EA;">Unité</th>
+              <th style="text-align:right;padding:8px 12px;font-size:10px;color:#8E8E93;font-weight:700;text-transform:uppercase;border-bottom:1px solid #E5E5EA;width:15%;">Quantité</th>
+              <th style="padding:8px 12px;font-size:10px;color:#8E8E93;font-weight:700;text-transform:uppercase;border-bottom:1px solid #E5E5EA;width:20%;">Unité</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>

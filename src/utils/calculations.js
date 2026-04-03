@@ -8,6 +8,21 @@ export const SECTION_ORDER = [
   'Varia - Congelés',
 ]
 
+// French food nouns that end in 's' in their singular form and must NOT be de-pluralized
+const INVARIABLE_FOODS = new Set([
+  'riz', 'maïs', 'mais', 'ananas', 'cassis', 'radis', 'pois',
+  'fenouil', 'céleri', 'celeri', 'brocolis', 'concombres',
+])
+
+// Normalize ingredient names for aggregation: lowercases and strips common French plural suffixes
+// so "Tomate" and "Tomates" share the same key, as do "Laitue romaine" / "Laitues romaines"
+function normalizeIngredientName(name) {
+  const s = name.toLowerCase().trim()
+  if (s.endsWith('eaux')) return s.slice(0, -4) + 'eau'  // poireaux→poireau
+  if (s.endsWith('s') && s.length > 3 && !INVARIABLE_FOODS.has(s)) return s.slice(0, -1)
+  return s
+}
+
 // Normalize unit strings for aggregation — converts to base units so g+kg and ml+L share the same key
 function normalizeUnitForAgg(unit) {
   if (!unit) return ''
@@ -98,7 +113,7 @@ export function buildGroceryList(mealPlan, numPeople) {
       for (const recipe of iterRecipes(slot)) {
         for (const ingr of recipe.ingredients) {
           const normUnit = normalizeUnitForAgg(ingr.unit)
-          const key = `${ingr.ingredient.toLowerCase().trim()}|||${normUnit}`
+          const key = `${normalizeIngredientName(ingr.ingredient)}|||${normUnit}`
 
           if (!aggregated.has(key)) {
             aggregated.set(key, {
