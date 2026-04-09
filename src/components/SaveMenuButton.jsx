@@ -45,6 +45,7 @@ export default function SaveMenuButton({ campSetup, mealPlan, onImport, onClear 
         alert('Fichier invalide ou corrompu.')
       }
     }
+    reader.onerror = () => alert('Erreur de lecture du fichier.')
     reader.readAsText(file)
     // Reset so same file can be re-imported
     e.target.value = ''

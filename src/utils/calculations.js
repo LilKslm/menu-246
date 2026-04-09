@@ -122,7 +122,7 @@ export function buildGroceryList(mealPlan, numPeople) {
   for (const dayMeals of Object.values(mealPlan)) {
     for (const slot of Object.values(dayMeals)) {
       for (const recipe of iterRecipes(slot)) {
-        for (const ingr of recipe.ingredients) {
+        for (const ingr of (recipe.ingredients ?? [])) {
           const normUnit = normalizeUnitForAgg(ingr.unit)
           const key = `${normalizeIngredientName(ingr.ingredient)}|||${normUnit}`
 
@@ -191,7 +191,7 @@ export function generateCSV(campSetup, mealPlan) {
   for (const section of sections) {
     const items = bySection[section]
     for (const item of items) {
-      lines.push(`${esc(section)},${esc(item.ingredient)},${formatGroceryQty(item.totalAmount, item.unit)},${esc(formatGroceryUnit(item.totalAmount, item.unit))}`)
+      lines.push(`${esc(section)},${esc(item.ingredient)},${esc(formatGroceryQty(item.totalAmount, item.unit))},${esc(formatGroceryUnit(item.totalAmount, item.unit))}`)
     }
     lines.push(`${esc('')},${esc(`— ${items.length} article${items.length > 1 ? 's' : ''} (${section})`)},${esc('')},${esc('')}`)
     lines.push('')

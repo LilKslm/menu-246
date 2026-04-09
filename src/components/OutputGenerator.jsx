@@ -44,6 +44,15 @@ function saveChecked(campSetup, checked) {
   } catch {}
 }
 
+// ── HTML escape helper (prevents XSS in generated pages) ─────
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 // ── Download / open helpers ───────────────────────────────────
 function downloadBlob(content, filename, mimeType) {
   const blob = new Blob([content], { type: mimeType })
@@ -135,7 +144,7 @@ function buildHeroHTML(campSetup, heroImg, subtitle) {
     ${imgTag}
     <div class="hero-overlay">
       <div class="hero-title">Menu 246</div>
-      <div class="hero-subtitle">${campName} — ${subtitle}</div>
+      <div class="hero-subtitle">${escHtml(campName)} — ${escHtml(subtitle)}</div>
       <div class="hero-chips">
         ${dateChip}
         <span class="hero-chip">👥 ${n} participant${n > 1 ? 's' : ''}</span>
@@ -161,7 +170,7 @@ function buildVisualMenuHTML(campSetup, mealPlan, heroImg) {
           </div>
           <div style="flex:1;min-width:0;">
             ${recipes.length > 0
-              ? recipes.map(r => `<div style="font-size:13px;font-weight:600;color:#1C1C1E;line-height:1.4;">${r.name}</div>`).join('')
+              ? recipes.map(r => `<div style="font-size:13px;font-weight:600;color:#1C1C1E;line-height:1.4;">${escHtml(r.name)}</div>`).join('')
               : `<span style="font-size:12px;color:#C7C7CC;font-style:italic;">Non planifié</span>`
             }
           </div>
@@ -171,7 +180,7 @@ function buildVisualMenuHTML(campSetup, mealPlan, heroImg) {
     return `
       <div style="background:#fff;border-radius:16px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);page-break-inside:avoid;">
         <h2 style="font-size:15px;font-weight:700;color:#007AFF;margin-bottom:10px;text-transform:capitalize;padding-bottom:8px;border-bottom:2px solid #F2F2F7;">
-          ${dayLabel}
+          ${escHtml(dayLabel)}
         </h2>
         ${mealRows}
       </div>`
@@ -182,7 +191,7 @@ function buildVisualMenuHTML(campSetup, mealPlan, heroImg) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${campName} — Menu visuel</title>
+<title>${escHtml(campName)} — Menu visuel</title>
 <style>${buildSharedStyles()}</style>
 </head>
 <body>
@@ -216,14 +225,14 @@ function buildDetailedMenuHTML(campSetup, mealPlan, heroImg) {
       const recipeBlocks = recipes.map(recipe => {
         const ingrRows = recipe.ingredients.map(ingr => `
           <tr>
-            <td style="padding:4px 8px 4px 0;font-size:11px;color:#1C1C1E;">${ingr.ingredient}</td>
+            <td style="padding:4px 8px 4px 0;font-size:11px;color:#1C1C1E;">${escHtml(ingr.ingredient)}</td>
             <td style="padding:4px 8px;font-size:11px;color:#8E8E93;text-align:right;white-space:nowrap;">${formatAmount(ingr.portion)} ${ingr.unit}</td>
             <td style="padding:4px 0 4px 8px;font-size:11px;font-weight:700;color:#007AFF;text-align:right;white-space:nowrap;">${formatAmount(ingr.portion * n)} ${ingr.unit}</td>
           </tr>`).join('')
 
         return `
           <div style="margin-bottom:10px;padding-left:26px;">
-            <div style="font-size:13px;font-weight:700;color:#007AFF;margin-bottom:5px;">${recipe.name}</div>
+            <div style="font-size:13px;font-weight:700;color:#007AFF;margin-bottom:5px;">${escHtml(recipe.name)}</div>
             <table style="border-collapse:collapse;width:100%;">
               <thead>
                 <tr style="border-bottom:1px solid #E5E5EA;">
@@ -249,7 +258,7 @@ function buildDetailedMenuHTML(campSetup, mealPlan, heroImg) {
 
     return `
       <div style="background:#fff;border-radius:16px;padding:18px 22px;margin-bottom:14px;box-shadow:0 2px 10px rgba(0,0,0,0.06);page-break-inside:avoid;">
-        <h2 style="font-size:15px;font-weight:700;color:#1C1C1E;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #007AFF;text-transform:capitalize;">${dayLabel}</h2>
+        <h2 style="font-size:15px;font-weight:700;color:#1C1C1E;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #007AFF;text-transform:capitalize;">${escHtml(dayLabel)}</h2>
         ${mealBlocks}
       </div>`
   }).join('')
@@ -259,7 +268,7 @@ function buildDetailedMenuHTML(campSetup, mealPlan, heroImg) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${campName} — Menu détaillé</title>
+<title>${escHtml(campName)} — Menu détaillé</title>
 <style>${buildSharedStyles()}</style>
 </head>
 <body>
@@ -284,7 +293,7 @@ function buildGroceryHTML(campSetup, mealPlan, heroImg) {
         <td style="padding:10px 12px;font-size:13px;border-bottom:1px solid #F2F2F7;">
           <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
             <input type="checkbox" style="width:16px;height:16px;accent-color:#007AFF;flex-shrink:0;">
-            <span class="item-name">${item.ingredient}</span>
+            <span class="item-name">${escHtml(item.ingredient)}</span>
           </label>
         </td>
         <td style="padding:10px 12px;font-size:13px;font-weight:700;text-align:right;border-bottom:1px solid #F2F2F7;color:#007AFF;white-space:nowrap;">${formatGroceryQty(item.totalAmount, item.unit)}</td>
@@ -316,7 +325,7 @@ function buildGroceryHTML(campSetup, mealPlan, heroImg) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${campName} — Liste d'épicerie</title>
+<title>${escHtml(campName)} — Liste d'épicerie</title>
 <style>
 ${buildSharedStyles()}
 .item-name.checked { text-decoration:line-through; color:#8E8E93; }

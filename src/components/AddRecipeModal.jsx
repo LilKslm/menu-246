@@ -68,7 +68,8 @@ export default function AddRecipeModal({ defaultMealType, onSave, onClose }) {
     const errs = {}
     if (!name.trim()) errs.name = 'Le nom est requis'
     if (!createdBy.trim()) errs.createdBy = 'Votre prénom est requis'
-    if (ingredients.length === 0) errs.ingredients = 'Ajoutez au moins un ingrédient'
+    const hasIngredients = ingredients.some(i => i.ingredient.trim())
+    if (!hasIngredients) errs.ingredients = 'Ajoutez au moins un ingrédient'
     return errs
   }
 
@@ -86,7 +87,7 @@ export default function AddRecipeModal({ defaultMealType, onSave, onClose }) {
       }))
 
     onSave({
-      id: `custom|||${Date.now()}|||${name.trim()}`,
+      id: `custom|||${Date.now()}|||${name.trim().replace(/\//g, '-')}`,
       name: name.trim(),
       mealType,
       category: mealType,

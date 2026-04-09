@@ -84,7 +84,8 @@ ipcMain.handle('load-excel-file', async () => {
   if (!fs.existsSync(excelPath)) {
     throw new Error(`Excel file not found at: ${excelPath}`)
   }
-  return fs.readFileSync(excelPath).buffer
+  const buf = fs.readFileSync(excelPath)
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
 })
 
 // ── IPC: Dropbox recipes read ─────────────────────────────────
@@ -100,9 +101,14 @@ ipcMain.handle('read-dropbox-recipes', () => {
 
 // ── IPC: Dropbox recipes write ────────────────────────────────
 ipcMain.handle('write-dropbox-recipes', (_, data) => {
-  const dir = path.join(os.homedir(), 'Dropbox', 'Scout Group')
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-  fs.writeFileSync(path.join(dir, 'recipes.json'), JSON.stringify(data, null, 2), 'utf-8')
+  if (typeof data !== 'object' || data === null) return
+  try {
+    const dir = path.join(os.homedir(), 'Dropbox', 'Scout Group')
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(path.join(dir, 'recipes.json'), JSON.stringify(data, null, 2), 'utf-8')
+  } catch (err) {
+    console.error('write-dropbox-recipes error:', err)
+  }
 })
 
 // ── IPC: native save dialog ───────────────────────────────────

@@ -167,12 +167,10 @@ export default function App() {
   }, [baseRecipes, sharedRecipes, hiddenIds])
 
   function handleCampSetupComplete(setup) {
-    setCampSetup(prev => {
-      if (prev.numDays !== setup.numDays) {
-        setMealPlan(createEmptyMealPlan(setup.numDays))
-      }
-      return setup
-    })
+    if (campSetup.numDays !== setup.numDays) {
+      setMealPlan(createEmptyMealPlan(setup.numDays))
+    }
+    setCampSetup(setup)
     setStep(STEPS.PLAN)
   }
 

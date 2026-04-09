@@ -37,6 +37,7 @@ export default function RecipePickerSheet({
   const [selected, setSelected] = useState([])
   const [expanded, setExpanded] = useState(null)
   const searchRef = useRef(null)
+  const closeTimer = useRef(null)
 
   // Animate in on mount
   useEffect(() => {
@@ -44,9 +45,12 @@ export default function RecipePickerSheet({
     return () => cancelAnimationFrame(t)
   }, [])
 
+  // Clean up dismiss timer on unmount
+  useEffect(() => () => clearTimeout(closeTimer.current), [])
+
   function dismiss() {
     setVisible(false)
-    setTimeout(onClose, 300)
+    closeTimer.current = setTimeout(onClose, 300)
   }
 
   // Flat list of all recipes matching filter + search

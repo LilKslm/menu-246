@@ -51,6 +51,8 @@ export default function RecipeEditor({ recipe, onSave, onClose }) {
   function validate() {
     const errs = {}
     if (!name.trim()) errs.name = 'Le nom est requis'
+    const hasIngredients = ingredients.some(i => i.ingredient.trim())
+    if (!hasIngredients) errs.ingredients = 'Ajoutez au moins un ingrédient'
     return errs
   }
 
@@ -69,7 +71,7 @@ export default function RecipeEditor({ recipe, onSave, onClose }) {
 
     const editedRecipe = {
       // If forking an Excel recipe: generate a new custom id
-      id: isExcel ? `custom|||${Date.now()}|||${name.trim()}` : recipe.id,
+      id: isExcel ? `custom|||${Date.now()}|||${name.trim().replace(/\//g, '-')}` : recipe.id,
       name: name.trim(),
       mealType,
       category: mealType,

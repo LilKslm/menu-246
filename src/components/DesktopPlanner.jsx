@@ -182,6 +182,7 @@ const RecipePill = memo(function RecipePill({ recipe, mealType, onRemove }) {
   return (
     <div
       ref={pillRef}
+      onClick={e => e.stopPropagation()}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={{

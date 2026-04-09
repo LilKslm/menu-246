@@ -30,11 +30,16 @@ export default function MealPlanner({
   onNext,
   onBack,
 }) {
-  // ── DESKTOP: delegate entirely to DesktopPlanner ──────────
-  // We detect desktop via a media query so the component tree stays clean
+  // ── Responsive: detect desktop vs mobile ──────────────────
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' && window.innerWidth >= 768
   )
+
+  // All hooks must be declared before any conditional return (Rules of Hooks)
+  const [activeTab, setActiveTab] = useState('calendar')
+  const [pickerSlot, setPickerSlot] = useState(null)
+  const [addModalMealType, setAddModalMealType] = useState(null)
+
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)')
     const handler = e => setIsDesktop(e.matches)
@@ -42,6 +47,18 @@ export default function MealPlanner({
     return () => mq.removeEventListener('change', handler)
   }, [])
 
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        setAddModalMealType(null)
+        setPickerSlot(null)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // ── DESKTOP: delegate entirely to DesktopPlanner ──────────
   if (isDesktop) {
     return (
       <DesktopPlanner
@@ -58,16 +75,7 @@ export default function MealPlanner({
     )
   }
 
-  // ── MOBILE layout (unchanged) ──────────────────────────────
-  const [activeTab, setActiveTab] = useState('calendar')
-  const [pickerSlot, setPickerSlot] = useState(null)
-  const [addModalMealType, setAddModalMealType] = useState(null)
-
-  useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') setPickerSlot(null) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  // ── MOBILE layout ──────────────────────────────────────────
 
   function handleSlotTap(dayIndex, mealType) {
     const date = parseLocalDate(campSetup.startDate)

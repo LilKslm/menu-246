@@ -51,7 +51,7 @@ export default function RecipeDetails({
 
   // Group ingredients by section
   const bySection = {}
-  for (const ingr of recipe.ingredients) {
+  for (const ingr of (recipe.ingredients ?? [])) {
     const sec = ingr.section || 'Varia'
     if (!bySection[sec]) bySection[sec] = []
     bySection[sec].push(ingr)

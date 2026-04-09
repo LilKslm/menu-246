@@ -34,6 +34,7 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
     if (form.startDate && form.endDate && parseLocalDate(form.endDate) < parseLocalDate(form.startDate))
       errs.endDate = 'La date de fin doit être après le début'
     if (!form.numPeople || form.numPeople < 1) errs.numPeople = 'Minimum 1 personne'
+    if (form.numPeople > 500) errs.numPeople = 'Maximum 500 personnes'
     if (numDays > 21) errs.endDate = 'Maximum 21 jours'
     return errs
   }
