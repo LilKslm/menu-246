@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { isElectron } from '../utils/platform'
 
+const RELEASES_URL = 'https://github.com/LilKslm/menu-246/releases/latest'
+
 export default function UpdateNotification() {
-  const [status, setStatus] = useState(null) // null | 'available' | 'ready'
+  const [status, setStatus] = useState(null) // null | 'available' | 'ready' | 'failed'
   const [version, setVersion] = useState('')
 
   useEffect(() => {
@@ -11,13 +13,25 @@ export default function UpdateNotification() {
       setVersion(info.version || '')
       setStatus('available')
     })
-    window.electronAPI.onUpdateDownloaded(() => {
+    window.electronAPI.onUpdateDownloaded(info => {
+      if (info?.version) setVersion(info.version)
       setStatus('ready')
+    })
+    window.electronAPI.onUpdateError(() => {
+      setStatus('failed')
     })
     return () => {
       window.electronAPI.removeUpdateListeners()
     }
   }, [])
+
+  async function handleInstall() {
+    const result = await window.electronAPI.installUpdate()
+    // If quitAndInstall failed (macOS unsigned app), result has { error }
+    if (result?.error) {
+      setStatus('failed')
+    }
+  }
 
   if (!status) return null
 
@@ -60,7 +74,7 @@ export default function UpdateNotification() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button
-              onClick={() => window.electronAPI.installUpdate()}
+              onClick={handleInstall}
               style={{
                 flex: 1, padding: '8px', borderRadius: 8, border: 'none',
                 background: '#007AFF', color: '#fff',
@@ -71,6 +85,50 @@ export default function UpdateNotification() {
               onMouseLeave={e => e.currentTarget.style.opacity = '1'}
             >
               Redémarrer
+            </button>
+            <button
+              onClick={() => setStatus(null)}
+              style={{
+                flex: 1, padding: '8px', borderRadius: 8,
+                border: '1px solid #E5E7EB', background: '#fff', color: '#374151',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+              onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+            >
+              Plus tard
+            </button>
+          </div>
+        </>
+      )}
+
+      {status === 'failed' && (
+        <>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+            <span style={{ fontSize: 20, lineHeight: 1 }}>⚠️</span>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#1C1C1E', margin: '0 0 3px' }}>
+                Mise à jour manuelle requise
+              </p>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
+                {version ? `Téléchargez la version ${version} depuis GitHub.` : 'Téléchargez la nouvelle version depuis GitHub.'}
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => window.electronAPI.openExternal(RELEASES_URL)}
+              style={{
+                flex: 1, padding: '8px', borderRadius: 8, border: 'none',
+                background: '#007AFF', color: '#fff',
+                fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                transition: 'opacity 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            >
+              Télécharger
             </button>
             <button
               onClick={() => setStatus(null)}

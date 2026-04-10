@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const fs = require('fs')
@@ -39,11 +39,12 @@ app.whenReady().then(() => {
     autoUpdater.on('update-available', info => {
       win.webContents.send('update-available', { version: info.version })
     })
-    autoUpdater.on('update-downloaded', () => {
-      win.webContents.send('update-downloaded')
+    autoUpdater.on('update-downloaded', (info) => {
+      win.webContents.send('update-downloaded', { version: info.version })
     })
     autoUpdater.on('error', err => {
       console.error('AutoUpdater error:', err.message)
+      win.webContents.send('update-error', err.message)
     })
 
     // Throttled check: at most once per hour regardless of trigger source
@@ -72,7 +73,17 @@ app.on('window-all-closed', () => {
 
 // ── IPC: install update ───────────────────────────────────────
 ipcMain.handle('install-update', () => {
-  autoUpdater.quitAndInstall(true, true)
+  try {
+    autoUpdater.quitAndInstall(false, true)
+  } catch (err) {
+    console.error('quitAndInstall failed:', err)
+    return { error: err.message }
+  }
+})
+
+// ── IPC: open external URL ────────────────────────────────────
+ipcMain.handle('open-external', (_, url) => {
+  shell.openExternal(url)
 })
 
 // ── IPC: load Excel file ──────────────────────────────────────
