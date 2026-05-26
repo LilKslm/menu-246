@@ -52,13 +52,16 @@ function apiRequest(method, urlPath, body, isBinary = false) {
   })
 }
 
+// Pass --draft for a preview deploy; default is a production (published) deploy.
+const isDraft = process.argv.includes('--draft')
+
 const distDir = path.join(__dirname, 'dist')
 const fileMap = getAllFiles(distDir)
 console.log(`Found ${Object.keys(fileMap).length} files`)
 
 // Step 1: Create deploy
-console.log('Creating deploy...')
-const deploy = await apiRequest('POST', `/sites/${SITE_ID}/deploys`, { files: fileMap, draft: true })
+console.log(`Creating ${isDraft ? 'draft' : 'production'} deploy...`)
+const deploy = await apiRequest('POST', `/sites/${SITE_ID}/deploys`, { files: fileMap, draft: isDraft })
 
 if (!deploy.id) {
   console.error('Failed to create deploy:', JSON.stringify(deploy))
@@ -81,5 +84,19 @@ for (const hash of required) {
   await apiRequest('PUT', `/deploys/${deploy.id}/files${encodedRel}`, content, true)
 }
 
-console.log('\nDraft deploy complete!')
-console.log('Preview URL:', deploy.deploy_ssl_url || deploy.deploy_url || `https://${deploy.subdomain}.netlify.app`)
+// Step 3: wait for the deploy to finish processing so the production URL is live
+if (!isDraft) {
+  process.stdout.write('Publishing')
+  for (let i = 0; i < 60; i++) {
+    const state = await apiRequest('GET', `/deploys/${deploy.id}`)
+    if (state.state === 'ready') { console.log(' done.'); break }
+    if (state.state === 'error') { console.error('\nDeploy failed:', state.error_message); process.exit(1) }
+    process.stdout.write('.')
+    await new Promise(r => setTimeout(r, 2000))
+  }
+}
+
+console.log(`\n${isDraft ? 'Draft' : 'Production'} deploy complete!`)
+console.log('URL:', isDraft
+  ? (deploy.deploy_ssl_url || deploy.deploy_url)
+  : (deploy.ssl_url || deploy.url || `https://${deploy.subdomain}.netlify.app`))

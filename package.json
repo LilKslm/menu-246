@@ -14,7 +14,9 @@
     "electron:build": "npm run build && electron-builder",
     "electron:pack": "npm run build && electron-builder --dir",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "npm run build && node deploy-draft.mjs",
+    "deploy:preview": "npm run build && node deploy-draft.mjs --draft"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^16.6.0",
