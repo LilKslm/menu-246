@@ -1,139 +1,52 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import './styles/tokens.css';
+@import './styles/components.css';
 
-@layer base {
-  body {
-    @apply bg-apple-gray font-sans text-apple-dark antialiased;
-    line-height: 1.6;
-    -webkit-tap-highlight-color: transparent;
-    -webkit-font-smoothing: antialiased;
-  }
+/* ── Minimal reset (replaces Tailwind preflight) ─────────────── */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: var(--font-sans);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+h1, h2, h3, h4, h5, h6, p, figure { margin: 0; }
+button, input, select, textarea { font-family: inherit; }
+button { color: inherit; }
 
-  * {
-    box-sizing: border-box;
-  }
+/* iOS safe area support */
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+.safe-area-pt { padding-top: env(safe-area-inset-top); }
 
-  /* iOS safe area support */
-  .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
-  .safe-area-pt { padding-top: env(safe-area-inset-top); }
+/* Prevent iOS input zoom (must be 16px+) */
+input, select, textarea { font-size: 16px; }
 
-  /* Prevent iOS input zoom (must be 16px+) */
-  input, select, textarea {
-    font-size: 16px;
-  }
-
-  /* Remove iOS input styling */
-  input[type="text"], input[type="number"], input[type="search"], input[type="date"] {
-    -webkit-appearance: none;
-    appearance: none;
-  }
-
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-apple-gray-3 rounded-full;
-  }
-
-  /* Smooth spring animation for sheet modals */
-  @keyframes slideUp {
-    from { transform: translateY(100%); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
+/* Remove iOS input styling */
+input[type="text"], input[type="number"], input[type="search"], input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-@layer components {
-  /* ── Buttons ─────────────────────────────────── */
-  .btn-primary {
-    @apply bg-apple-blue hover:bg-apple-blue-dark text-white font-semibold
-           px-5 py-2.5 rounded-xl text-sm
-           transition-all duration-150 active:scale-95
-           disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100
-           select-none;
-  }
-  .btn-secondary {
-    @apply bg-apple-gray-2 hover:bg-apple-gray-3 text-apple-dark font-semibold
-           px-5 py-2.5 rounded-xl text-sm
-           transition-all duration-150 active:scale-95 select-none;
-  }
-  .btn-ghost {
-    @apply text-apple-blue hover:bg-blue-50 px-3 py-1.5 rounded-lg
-           transition-all duration-150 text-sm font-medium select-none;
-  }
-  .btn-icon {
-    @apply w-8 h-8 flex items-center justify-center rounded-lg
-           text-apple-secondary hover:text-apple-dark hover:bg-apple-gray
-           transition-colors duration-100 select-none;
-  }
+/* Global scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--r-pill); }
 
-  /* ── Cards ───────────────────────────────────── */
-  .card {
-    @apply bg-white rounded-2xl shadow-apple p-5;
-  }
-  .card-compact {
-    @apply bg-white rounded-xl shadow-apple p-3;
-  }
-
-  /* ── Form ────────────────────────────────────── */
-  .input-field {
-    @apply w-full border border-apple-gray-3 rounded-xl px-3.5 py-2.5 text-sm
-           text-apple-dark placeholder-apple-secondary
-           focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent
-           transition-all duration-150 bg-white;
-  }
-  .label {
-    @apply block text-sm font-semibold text-apple-dark mb-1.5;
-  }
-
-  /* ── Badges ──────────────────────────────────── */
-  .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold;
-  }
-
-  /* ── Section header (collapsible) ────────────── */
-  .section-header {
-    @apply flex items-center justify-between px-3 py-2
-           cursor-pointer hover:bg-apple-gray rounded-lg
-           transition-colors duration-100 select-none;
-  }
-
-  /* ── Recipe card in browser ──────────────────── */
-  .recipe-card {
-    @apply flex items-center gap-2 px-3 py-2 rounded-xl mb-0.5
-           cursor-pointer text-sm transition-all duration-100 select-none
-           hover:bg-apple-gray text-apple-dark;
-  }
-  .recipe-card.is-pending {
-    @apply bg-apple-blue text-white;
-  }
-  .recipe-card.is-viewed {
-    @apply bg-blue-50 text-apple-blue ring-1 ring-apple-blue/20;
-  }
-
-  /* ── Calendar cell ───────────────────────────── */
-  .cal-cell-empty {
-    @apply border-dashed border border-apple-gray-3 bg-white/50
-           hover:bg-white hover:border-apple-gray-2
-           rounded-xl transition-all duration-100 cursor-pointer;
-  }
-  .cal-cell-empty.can-drop {
-    @apply border-apple-blue/40 bg-apple-blue/5
-           hover:bg-apple-blue/10 hover:border-apple-blue/60
-           ring-1 ring-apple-blue/20;
-  }
-  .cal-cell-filled {
-    @apply border-transparent rounded-xl transition-all duration-100;
-  }
+/* Animations */
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ── Print styles ─────────────────────────────── */

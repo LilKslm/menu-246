@@ -4,6 +4,11 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: './',
+  server: {
+    host: true,
+    // Allow tunnel hosts (localtunnel/ngrok) during local review
+    allowedHosts: true,
+  },
   plugins: [
     react(),
     VitePWA({

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import appLogoUrl from '../assets/app-logo.jpg'
 import Signature from './Signature'
-import { parseLocalDate } from '../utils/calculations'
+import { parseLocalDate, getPeopleForDay, getDayLabel } from '../utils/calculations'
+import { I } from '../shared/icons.jsx'
 
 function calculateDays(startDate, endDate) {
   if (!startDate || !endDate) return 0
@@ -11,20 +12,49 @@ function calculateDays(startDate, endDate) {
   return Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1
 }
 
+function dayLabel(startDate, i) {
+  const l = getDayLabel(startDate, i)
+  return `${l.weekday} ${l.day} ${l.month}`
+}
+
+function rangeLabel(startDate, endDate) {
+  const s = parseLocalDate(startDate)
+  const e = parseLocalDate(endDate)
+  const sameMonth = s.getMonth() === e.getMonth()
+  const sd = s.getDate()
+  const ed = e.toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })
+  return sameMonth ? `${sd} → ${ed}` : `${s.toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })} → ${ed}`
+}
+
 export default function CampSetup({ initial, onComplete, recipesLoading, recipesError }) {
   const [form, setForm] = useState({
     campName: initial.campName || '',
     startDate: initial.startDate || '',
     endDate: initial.endDate || '',
     numPeople: initial.numPeople || 10,
+    numPeopleByDay: initial.numPeopleByDay || {},
   })
   const [errors, setErrors] = useState({})
+  const [perDayOpen, setPerDayOpen] = useState(
+    () => Object.keys(initial.numPeopleByDay || {}).length > 0
+  )
 
   const numDays = calculateDays(form.startDate, form.endDate)
+  const globalPeople = parseInt(form.numPeople, 10) || 0
 
   function set(field, value) {
     setForm(prev => ({ ...prev, [field]: value }))
     setErrors(prev => ({ ...prev, [field]: '' }))
+  }
+
+  function setDayCount(i, value) {
+    const n = Math.max(0, Math.min(500, value))
+    setForm(prev => {
+      const next = { ...prev.numPeopleByDay }
+      if (n === globalPeople) delete next[i]   // back to global ⇒ drop the override
+      else next[i] = n
+      return { ...prev, numPeopleByDay: next }
+    })
   }
 
   function validate() {
@@ -43,216 +73,197 @@ export default function CampSetup({ initial, onComplete, recipesLoading, recipes
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
-    onComplete({ ...form, numPeople: parseInt(form.numPeople, 10), numDays })
+    // Drop any per-day overrides outside the current day range
+    const cleaned = {}
+    for (const [k, v] of Object.entries(form.numPeopleByDay)) {
+      if (Number(k) < numDays) cleaned[k] = v
+    }
+    onComplete({ ...form, numPeople: parseInt(form.numPeople, 10), numDays, numPeopleByDay: cleaned })
   }
 
   const canProceed = !recipesLoading && !recipesError
 
-  const inputStyle = (hasError) => ({
-    width: '100%',
-    padding: '14px 16px',
-    fontSize: 16,
-    borderRadius: 12,
-    border: `1.5px solid ${hasError ? '#FF3B30' : '#E5E5EA'}`,
-    background: '#fff',
-    color: '#1C1C1E',
-    outline: 'none',
-    boxSizing: 'border-box',
-    WebkitAppearance: 'none',
-    transition: 'border-color 0.15s',
-  })
+  async function handleLogoReset() {
+    if (!confirm('Recommencer à zéro?\n\nCeci effacera tous vos menus et données locales.')) return
+    if ('caches' in window) {
+      const keys = await caches.keys()
+      await Promise.all(keys.map(k => caches.delete(k)))
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(regs.map(r => r.unregister()))
+    }
+    localStorage.clear()
+    if ('indexedDB' in window) {
+      const dbs = await indexedDB.databases?.() ?? []
+      dbs.forEach(db => db.name && indexedDB.deleteDatabase(db.name))
+    }
+    window.location.reload(true)
+  }
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', background: '#F2F2F7', WebkitOverflowScrolling: 'touch' }}>
-      <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px' }}>
-        <div style={{ width: '100%', maxWidth: 390 }}>
+    <div className="app" style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)', WebkitOverflowScrolling: 'touch', position: 'relative' }}>
+      {/* Subtle ember glow */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(circle at 50% 110%, oklch(0.78 0.13 50 / 0.16), transparent 55%)',
+      }} />
 
-          {/* Hero */}
-          <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <img
-              src={appLogoUrl}
-              alt="Menu 246"
-              style={{
-                width: 96, height: 96, borderRadius: 22,
-                objectFit: 'cover', margin: '0 auto 20px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
-                cursor: 'pointer',
-                display: 'block',
-                transition: 'transform 0.15s',
-              }}
-              onClick={async () => {
-                if (!confirm('Recommencer à zéro?\n\nCeci effacera tous vos menus et données locales.')) return
-                if ('caches' in window) {
-                  const keys = await caches.keys()
-                  await Promise.all(keys.map(k => caches.delete(k)))
-                }
-                if ('serviceWorker' in navigator) {
-                  const regs = await navigator.serviceWorker.getRegistrations()
-                  await Promise.all(regs.map(r => r.unregister()))
-                }
-                localStorage.clear()
-                if ('indexedDB' in window) {
-                  const dbs = await indexedDB.databases?.() ?? []
-                  dbs.forEach(db => db.name && indexedDB.deleteDatabase(db.name))
-                }
-                window.location.reload(true)
-              }}
-            />
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1C1C1E', margin: '0 0 6px', letterSpacing: -0.5 }}>Menu 246</h1>
-            <p style={{ fontSize: 15, color: '#636366', margin: 0, lineHeight: 1.5 }}>
-              Planifiez les repas de votre camp
-            </p>
-          </div>
+      <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px', position: 'relative' }}>
+        <div className="card" style={{ width: '100%', maxWidth: 520, padding: 'var(--space-8) var(--space-7) var(--space-7)' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
 
-          {/* Recipe status */}
-          {recipesLoading && (
-            <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, background: '#EFF6FF', borderRadius: 14, padding: '12px 16px' }}>
-              <svg style={{ animation: 'spin 1s linear infinite', width: 16, height: 16, flexShrink: 0 }} viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="#3B82F6" strokeWidth="3" opacity="0.25"/>
-                <path d="M4 12a8 8 0 018-8" stroke="#3B82F6" strokeWidth="3" strokeLinecap="round"/>
-              </svg>
-              <span style={{ fontSize: 14, color: '#1D4ED8', fontWeight: 500 }}>Chargement des recettes…</span>
-            </div>
-          )}
-          {recipesError && (
-            <div style={{ marginBottom: 20, background: '#FFF1F0', borderRadius: 14, padding: '12px 16px', fontSize: 14, color: '#DC2626' }}>
-              <strong>Erreur:</strong> {recipesError}
-            </div>
-          )}
-          {!recipesLoading && !recipesError && (
-            <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8, background: '#F0FDF4', borderRadius: 14, padding: '12px 16px' }}>
-              <span style={{ fontSize: 15 }}>✓</span>
-              <span style={{ fontSize: 14, color: '#16A34A', fontWeight: 500 }}>Recettes chargées</span>
-            </div>
-          )}
-
-          {/* Form card */}
-          <form onSubmit={handleSubmit}>
-            <div style={{ background: '#fff', borderRadius: 20, boxShadow: '0 2px 16px rgba(0,0,0,0.07)', overflow: 'hidden' }}>
-
-              {/* Camp name */}
-              <div style={{ padding: '20px 20px 0' }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#636366', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Nom du camp
-                </label>
-                <input
-                  type="text"
-                  style={inputStyle(false)}
-                  placeholder="Camp Été 2025 (optionnel)"
-                  value={form.campName}
-                  onChange={e => set('campName', e.target.value)}
-                />
+            {/* Header */}
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <button type="button" onClick={handleLogoReset}
+                      title="Appuyez sur le logo pour réinitialiser"
+                      style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', lineHeight: 0 }}>
+                <img src={appLogoUrl} alt="Menu 246"
+                     style={{ width: 80, height: 80, borderRadius: 20, objectFit: 'cover', boxShadow: 'var(--shadow-3)', display: 'block' }} />
+              </button>
+              <div>
+                <div className="t-display" style={{ fontSize: 34 }}>Menu 246</div>
+                <div className="t-sub tx-2" style={{ marginTop: 6 }}>Planifiez les repas de votre camp</div>
               </div>
 
-              <div style={{ height: 1, background: '#F2F2F7', margin: '20px 0 0' }} />
-
-              {/* Dates */}
-              <div style={{ padding: '20px 20px 0' }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#636366', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                  Dates du camp
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <input
-                      type="date"
-                      style={{ ...inputStyle(!!errors.startDate), width: '100%', minWidth: 0 }}
-                      value={form.startDate}
-                      onChange={e => set('startDate', e.target.value)}
-                    />
-                  </div>
-                  <span style={{ color: '#C7C7CC', fontSize: 16, flexShrink: 0 }}>→</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <input
-                      type="date"
-                      style={{ ...inputStyle(!!errors.endDate), width: '100%', minWidth: 0 }}
-                      value={form.endDate}
-                      min={form.startDate}
-                      onChange={e => set('endDate', e.target.value)}
-                    />
-                  </div>
+              {recipesLoading && (
+                <div className="chip chip-loading">
+                  <svg style={{ animation: 'spin 1s linear infinite', width: 14, height: 14 }} viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+                    <path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                  </svg>
+                  <span>Chargement des recettes…</span>
                 </div>
-                {(errors.startDate || errors.endDate) && (
-                  <p style={{ fontSize: 12, color: '#FF3B30', marginTop: 6 }}>{errors.startDate || errors.endDate}</p>
+              )}
+              {recipesError && (
+                <div className="chip chip-error"><strong>Erreur:</strong>&nbsp;{recipesError}</div>
+              )}
+              {!recipesLoading && !recipesError && (
+                <div className="chip chip-success">
+                  <I.Check size={14} sw={2.2} stroke="currentColor" />
+                  <span>Recettes chargées</span>
+                </div>
+              )}
+            </div>
+
+            {/* Nom du camp */}
+            <div>
+              <label className="label">Nom du camp</label>
+              <input className="input" placeholder="Camp Été 2025 (optionnel)"
+                     value={form.campName} onChange={e => set('campName', e.target.value)} />
+            </div>
+
+            {/* Dates */}
+            <div>
+              <label className="label">Dates du camp</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <input className="input input-date" type="date" style={{ flex: 1, minWidth: 0 }}
+                       value={form.startDate} onChange={e => set('startDate', e.target.value)} />
+                <I.Arrow size={18} stroke="var(--text-tertiary)" sw={1.8} />
+                <input className="input input-date" type="date" style={{ flex: 1, minWidth: 0 }}
+                       value={form.endDate} min={form.startDate} onChange={e => set('endDate', e.target.value)} />
+              </div>
+              {(errors.startDate || errors.endDate) && (
+                <p className="t-caption" style={{ color: 'var(--error)', marginTop: 6 }}>{errors.startDate || errors.endDate}</p>
+              )}
+            </div>
+
+            {/* Duration highlight */}
+            {numDays > 0 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: 'var(--space-5)', borderRadius: 'var(--r-lg)', background: 'var(--primary-soft)',
+                boxShadow: 'inset 0 0 0 1px oklch(0.605 0.165 42 / 0.18)',
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span className="t-micro" style={{ color: 'var(--primary)' }}>Durée</span>
+                  <span className="t-sub" style={{ color: 'var(--primary)', fontWeight: 500 }}>{rangeLabel(form.startDate, form.endDate)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
+                  <span style={{ fontSize: 46, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--primary)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{numDays}</span>
+                  <span className="t-body" style={{ color: 'var(--primary)', fontWeight: 500 }}>jour{numDays > 1 ? 's' : ''} de camp</span>
+                </div>
+              </div>
+            )}
+
+            {/* Participants */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
+                <label className="label" style={{ margin: 0 }}>Participants</label>
+                {numDays > 0 && (
+                  <button type="button" className="btn-ghost"
+                          onClick={() => setPerDayOpen(o => !o)}
+                          style={{ fontSize: 'var(--fs-caption)', fontWeight: 'var(--fw-medium)',
+                                   color: perDayOpen ? 'var(--primary)' : 'var(--text-tertiary)',
+                                   display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 8px', borderRadius: 'var(--r-sm)' }}>
+                    <span>par jour</span>
+                    <I.ChevD size={12} sw={2} stroke="currentColor"
+                             style={{ transform: perDayOpen ? 'rotate(180deg)' : 'none', transition: 'transform 200ms' }} />
+                  </button>
                 )}
               </div>
 
-              {/* Duration badge */}
-              {numDays > 0 && (
-                <div style={{ margin: '16px 20px 0', background: '#EFF6FF', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 32, fontWeight: 800, color: '#007AFF', lineHeight: 1 }}>{numDays}</span>
-                  <span style={{ fontSize: 15, color: '#007AFF', fontWeight: 500 }}>jour{numDays > 1 ? 's' : ''} de camp</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                <div className="stepper" style={{ flex: 1 }}>
+                  <button type="button" onClick={() => set('numPeople', Math.max(1, globalPeople - 1))}>
+                    <I.Minus size={16} sw={2.2} stroke="currentColor" />
+                  </button>
+                  <input className="stepper-val" type="number" min="1" max="500"
+                         value={form.numPeople}
+                         onChange={e => set('numPeople', e.target.value)}
+                         style={{ width: 64, border: 'none', background: 'transparent', outline: 'none', fontFamily: 'inherit' }} />
+                  <button type="button" onClick={() => set('numPeople', globalPeople + 1)}>
+                    <I.Plus size={16} sw={2.2} stroke="currentColor" />
+                  </button>
+                </div>
+                <span className="t-sub tx-3" style={{ whiteSpace: 'nowrap' }}>personnes</span>
+              </div>
+              {errors.numPeople && <p className="t-caption" style={{ color: 'var(--error)', marginTop: 6 }}>{errors.numPeople}</p>}
+
+              {/* Per-day override panel */}
+              {perDayOpen && numDays > 0 && (
+                <div style={{ marginTop: 'var(--space-3)', padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--r-md)', background: 'var(--surface-2)', display: 'flex', flexDirection: 'column' }}>
+                  {Array.from({ length: numDays }).map((_, i) => {
+                    const value = getPeopleForDay(globalPeople, form.numPeopleByDay, i)
+                    const overridden = form.numPeopleByDay[i] != null && form.numPeopleByDay[i] !== globalPeople
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < numDays - 1 ? '1px solid var(--hairline)' : 'none' }}>
+                        <span className="t-sub" style={{ color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>{dayLabel(form.startDate, i)}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {overridden && <span className="dot" style={{ background: 'var(--primary)', width: 6, height: 6 }} />}
+                          <div style={{ display: 'inline-flex', alignItems: 'center', height: 30, background: 'var(--surface)', borderRadius: 'var(--r-sm)', boxShadow: overridden ? 'inset 0 0 0 1.5px var(--primary)' : 'inset 0 0 0 1px var(--border)' }}>
+                            <button type="button" onClick={() => setDayCount(i, value - 1)}
+                                    style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <I.Minus size={12} sw={2.2} />
+                            </button>
+                            <span style={{ minWidth: 28, textAlign: 'center', fontVariantNumeric: 'tabular-nums', fontWeight: 'var(--fw-semibold)', fontSize: 'var(--fs-sub)', color: overridden ? 'var(--primary)' : 'var(--text)' }}>{value}</span>
+                            <button type="button" onClick={() => setDayCount(i, value + 1)}
+                                    style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <I.Plus size={12} sw={2.2} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
-
-              <div style={{ height: 1, background: '#F2F2F7', margin: '20px 0 0' }} />
-
-              {/* Participants */}
-              <div style={{ padding: '20px 20px 20px' }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#636366', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
-                  Participants
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => set('numPeople', Math.max(1, (parseInt(form.numPeople, 10) || 1) - 1))}
-                    style={{
-                      width: 48, height: 48, borderRadius: 14, border: 'none', cursor: 'pointer',
-                      background: '#F2F2F7', color: '#1C1C1E', fontSize: 22, fontWeight: 300,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      transition: 'background 0.1s',
-                    }}
-                  >−</button>
-                  <input
-                    type="number"
-                    style={{ ...inputStyle(!!errors.numPeople), textAlign: 'center', fontSize: 20, fontWeight: 700, flex: 1 }}
-                    value={form.numPeople}
-                    min="1" max="500"
-                    onChange={e => set('numPeople', e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => set('numPeople', (parseInt(form.numPeople, 10) || 0) + 1)}
-                    style={{
-                      width: 48, height: 48, borderRadius: 14, border: 'none', cursor: 'pointer',
-                      background: '#F2F2F7', color: '#1C1C1E', fontSize: 22, fontWeight: 300,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    }}
-                  >+</button>
-                </div>
-                {errors.numPeople && <p style={{ fontSize: 12, color: '#FF3B30', marginTop: 6 }}>{errors.numPeople}</p>}
-              </div>
             </div>
 
-            {/* CTA button */}
-            <button
-              type="submit"
-              disabled={!canProceed}
-              style={{
-                width: '100%', marginTop: 16, padding: '16px',
-                borderRadius: 16, border: 'none', cursor: canProceed ? 'pointer' : 'not-allowed',
-                background: canProceed ? '#007AFF' : '#C7C7CC',
-                color: '#fff', fontSize: 17, fontWeight: 700,
-                letterSpacing: -0.2,
-                transition: 'background 0.15s, transform 0.1s',
-              }}
-              onTouchStart={e => canProceed && (e.currentTarget.style.transform = 'scale(0.97)')}
-              onTouchEnd={e => (e.currentTarget.style.transform = 'scale(1)')}
-            >
-              {recipesLoading ? 'Chargement…' : 'Commencer →'}
+            {/* CTA */}
+            <button type="submit" className="btn btn-primary btn-lg" disabled={!canProceed} style={{ width: '100%' }}>
+              {recipesLoading ? 'Chargement…' : 'Commencer'}
+              {!recipesLoading && <I.Arrow size={18} sw={2} stroke="currentColor" />}
             </button>
+
+            <div className="t-caption tx-3" style={{ textAlign: 'center', marginTop: 'calc(-1 * var(--space-3))' }}>
+              Appuyez sur le logo pour réinitialiser
+            </div>
           </form>
 
-          <p style={{ textAlign: 'center', marginTop: 16, fontSize: 12, color: '#C7C7CC' }}>
-            Appuyez sur le logo pour réinitialiser
-          </p>
           <Signature />
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.5; }
-      `}</style>
     </div>
   )
 }

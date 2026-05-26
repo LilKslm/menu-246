@@ -1,18 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
 import { downloadFile } from '../utils/platform'
+import { I } from '../shared/icons.jsx'
 
 export default function SaveMenuButton({ campSetup, mealPlan, onImport, onClear }) {
   const [open, setOpen] = useState(false)
   const fileInputRef = useRef(null)
   const containerRef = useRef(null)
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     if (!open) return
     function handleClick(e) {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false)
-      }
+      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -47,7 +45,6 @@ export default function SaveMenuButton({ campSetup, mealPlan, onImport, onClear 
     }
     reader.onerror = () => alert('Erreur de lecture du fichier.')
     reader.readAsText(file)
-    // Reset so same file can be re-imported
     e.target.value = ''
   }
 
@@ -59,82 +56,54 @@ export default function SaveMenuButton({ campSetup, mealPlan, onImport, onClear 
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 5,
-          padding: '6px 10px', borderRadius: 8,
-          border: 'none', background: open ? '#E5E7EB' : '#F3F4F6',
-          color: '#374151', fontSize: 12, fontWeight: 600,
-          cursor: 'pointer', transition: 'background 0.15s',
-          whiteSpace: 'nowrap',
-        }}
-        onMouseEnter={e => { if (!open) e.currentTarget.style.background = '#E5E7EB' }}
-        onMouseLeave={e => { if (!open) e.currentTarget.style.background = '#F3F4F6' }}
-        title="Sauvegarder le menu"
-      >
-        💾
-        <span className="hidden sm:inline">Sauvegarder</span>
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.5 }}>
-          <path d="M2 4l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
+      <button onClick={() => setOpen(o => !o)} className="btn btn-secondary btn-sm" style={{ height: 36 }} title="Sauvegarder le menu">
+        <I.Save size={16} />
+        <span className="hide-sm">Sauvegarder</span>
+        <I.ChevD size={12} sw={2} style={{ opacity: 0.5 }} />
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-          background: '#fff', borderRadius: 12,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-          border: '1px solid #F3F4F6',
-          minWidth: 200, zIndex: 100,
-          overflow: 'hidden',
+          background: 'var(--surface)', borderRadius: 'var(--r-lg)',
+          boxShadow: 'var(--shadow-3)', border: '1px solid var(--hairline)',
+          minWidth: 210, zIndex: 100, overflow: 'hidden', padding: 4,
         }}>
           <button onClick={handleExport} style={itemStyle}>
-            <span style={{ fontSize: 15 }}>⬇️</span>
+            <I.Download size={18} stroke="var(--text-secondary)" />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>Exporter menu</div>
-              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Télécharger fichier .json</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Exporter menu</div>
+              <div className="t-caption tx-3">Télécharger fichier .json</div>
             </div>
           </button>
-
-          <div style={{ height: 1, background: '#F3F4F6', margin: '0 12px' }} />
 
           <button onClick={handleImportClick} style={itemStyle}>
-            <span style={{ fontSize: 15 }}>⬆️</span>
+            <I.Arrow size={18} stroke="var(--text-secondary)" style={{ transform: 'rotate(-90deg)' }} />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>Importer menu</div>
-              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Charger un fichier .json</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>Importer menu</div>
+              <div className="t-caption tx-3">Charger un fichier .json</div>
             </div>
           </button>
 
-          <div style={{ height: 1, background: '#F3F4F6', margin: '0 12px' }} />
+          <div className="divider" style={{ margin: '4px 8px' }} />
 
-          <button onClick={handleClear} style={{ ...itemStyle, color: '#EF4444' }}>
-            <span style={{ fontSize: 15 }}>🗑</span>
+          <button onClick={handleClear} style={itemStyle}>
+            <I.Trash size={18} stroke="var(--error)" />
             <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#EF4444' }}>Effacer progression</div>
-              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Réinitialiser l'app</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--error)' }}>Effacer progression</div>
+              <div className="t-caption tx-3">Réinitialiser l'app</div>
             </div>
           </button>
         </div>
       )}
 
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        style={{ display: 'none' }}
-        onChange={handleFileChange}
-      />
+      <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileChange} />
     </div>
   )
 }
 
 const itemStyle = {
   width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-  padding: '10px 14px', border: 'none', background: 'transparent',
-  cursor: 'pointer', textAlign: 'left', transition: 'background 0.1s',
-  onMouseEnter: undefined,
+  padding: '10px 12px', border: 'none', background: 'transparent',
+  cursor: 'pointer', textAlign: 'left', borderRadius: 'var(--r-sm)',
 }

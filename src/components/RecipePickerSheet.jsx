@@ -1,26 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-
-const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
-const MEAL_LABELS = {
-  breakfast: 'Déjeuner',
-  lunch: 'Dîner',
-  dinner: 'Souper',
-  snack: 'Collation',
-}
-const MEAL_COLORS = {
-  breakfast: '#F97316',
-  lunch: '#22C55E',
-  dinner: '#3B82F6',
-  snack: '#A855F7',
-}
-
-function CheckIcon() {
-  return (
-    <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-      <path d="M1 5L4.5 8.5L11 1.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
-}
+import { MEALS, MEAL_TYPES, MEAL_LIST } from '../shared/meals'
+import { I } from '../shared/icons.jsx'
 
 export default function RecipePickerSheet({
   recipes,
@@ -39,13 +19,10 @@ export default function RecipePickerSheet({
   const searchRef = useRef(null)
   const closeTimer = useRef(null)
 
-  // Animate in on mount
   useEffect(() => {
     const t = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(t)
   }, [])
-
-  // Clean up dismiss timer on unmount
   useEffect(() => () => clearTimeout(closeTimer.current), [])
 
   function dismiss() {
@@ -53,7 +30,6 @@ export default function RecipePickerSheet({
     closeTimer.current = setTimeout(onClose, 300)
   }
 
-  // Flat list of all recipes matching filter + search
   const allFlat = useMemo(() => {
     const types = filter === 'all' ? MEAL_TYPES : [filter]
     const list = types.flatMap(mt => recipes[mt] || [])
@@ -65,19 +41,11 @@ export default function RecipePickerSheet({
     )
   }, [recipes, filter, search])
 
-  // All recipes flat (for resolving selected ids)
-  const allRecipesFlat = useMemo(
-    () => MEAL_TYPES.flatMap(mt => recipes[mt] || []),
-    [recipes]
-  )
+  const allRecipesFlat = useMemo(() => MEAL_TYPES.flatMap(mt => recipes[mt] || []), [recipes])
 
   function toggleSelect(recipe) {
     if (existingRecipes.some(r => r.id === recipe.id)) return
-    setSelected(prev =>
-      prev.includes(recipe.id)
-        ? prev.filter(id => id !== recipe.id)
-        : [...prev, recipe.id]
-    )
+    setSelected(prev => prev.includes(recipe.id) ? prev.filter(id => id !== recipe.id) : [...prev, recipe.id])
   }
 
   function handleAdd() {
@@ -87,7 +55,6 @@ export default function RecipePickerSheet({
   }
 
   // Touch drag-to-dismiss
-  const sheetRef = useRef(null)
   const dragStart = useRef(null)
   function onTouchStart(e) { dragStart.current = e.touches[0].clientY }
   function onTouchEnd(e) {
@@ -97,147 +64,89 @@ export default function RecipePickerSheet({
     dragStart.current = null
   }
 
+  const headerMeal = MEALS[mealType]
+
   return (
-    <div className="fixed inset-0 z-[200]" style={{ pointerEvents: 'auto' }}>
+    <div className="app" style={{ position: 'fixed', inset: 0, zIndex: 200, pointerEvents: 'auto' }}>
       {/* Backdrop */}
-      <div
-        onClick={dismiss}
-        style={{
-          position: 'absolute', inset: 0,
-          background: 'rgba(0,0,0,0.45)',
-          opacity: visible ? 1 : 0,
-          transition: 'opacity 0.25s ease',
-        }}
-      />
+      <div onClick={dismiss} style={{ position: 'absolute', inset: 0, background: 'rgba(30, 22, 14, 0.42)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', opacity: visible ? 1 : 0, transition: 'opacity 0.25s ease' }} />
 
       {/* Sheet */}
       <div
-        ref={sheetRef}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         style={{
-          position: 'absolute',
-          bottom: 0, left: 0, right: 0,
-          maxHeight: '92vh',
-          display: 'flex',
-          flexDirection: 'column',
-          background: '#fff',
-          borderRadius: '24px 24px 0 0',
+          position: 'absolute', bottom: 0, left: 0, right: 0, maxHeight: '92vh',
+          display: 'flex', flexDirection: 'column', background: 'var(--surface)',
+          borderTopLeftRadius: 'var(--r-2xl)', borderTopRightRadius: 'var(--r-2xl)',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 0.32s cubic-bezier(0.32, 0.72, 0, 1)',
-          boxShadow: '0 -4px 40px rgba(0,0,0,0.18)',
+          boxShadow: '0 -20px 40px rgba(30, 20, 10, 0.18)',
         }}
       >
         {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
-          <div style={{ width: 40, height: 4, background: '#D1D1D6', borderRadius: 2 }} />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+          <div style={{ width: 36, height: 4, background: 'var(--border)', borderRadius: 2 }} />
         </div>
 
         {/* Header */}
-        <div style={{ padding: '4px 20px 12px', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1C1C1E', lineHeight: 1.2 }}>
-                Ajouter des recettes
-              </h2>
-              <p style={{ fontSize: 14, color: '#636366', marginTop: 2 }}>
-                <span style={{
-                  display: 'inline-block',
-                  width: 8, height: 8, borderRadius: '50%',
-                  background: MEAL_COLORS[mealType],
-                  marginRight: 5, verticalAlign: 'middle',
-                }}/>
-                {MEAL_LABELS[mealType]} · {dayLabel}
-              </p>
-            </div>
-            <button
-              onClick={dismiss}
-              style={{
-                width: 32, height: 32, borderRadius: '50%',
-                background: '#F2F2F7', border: 'none',
-                fontSize: 16, color: '#636366', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}
-            >✕</button>
+        <div style={{ padding: '8px 20px 12px', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <span style={{ width: 30, height: 30, borderRadius: 'var(--r-sm)', background: headerMeal.soft, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, lineHeight: 1 }}>
+            {headerMeal.emoji}
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.01em' }}>{headerMeal.label}</div>
+            <div className="t-caption tx-3" style={{ textTransform: 'capitalize' }}>{dayLabel}</div>
           </div>
+          <button onClick={dismiss} className="btn-icon" style={{ width: 32, height: 32 }}><I.X size={16} /></button>
         </div>
 
-        {/* Search bar */}
-        <div style={{ padding: '0 16px 12px', flexShrink: 0 }}>
-          <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 15, color: '#8E8E93' }}>🔍</span>
-            <input
-              ref={searchRef}
-              type="search"
-              placeholder="Recette ou ingrédient..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              style={{
-                width: '100%', padding: '12px 12px 12px 38px',
-                fontSize: 16, border: 'none', borderRadius: 12,
-                background: '#F2F2F7', color: '#1C1C1E',
-                outline: 'none', boxSizing: 'border-box',
-              }}
-            />
-          </div>
+        {/* Search */}
+        <div style={{ padding: '0 16px 12px', position: 'relative', flexShrink: 0 }}>
+          <I.Search size={16} stroke="var(--text-tertiary)" style={{ position: 'absolute', left: 28, top: 12 }} />
+          <input ref={searchRef} className="input" type="search" placeholder="Recette ou ingrédient..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36, height: 40 }} />
         </div>
 
         {/* Filter chips */}
-        <div style={{ display: 'flex', gap: 8, padding: '0 16px 12px', overflowX: 'auto', flexShrink: 0, scrollbarWidth: 'none' }}>
-          {[{ id: 'all', label: 'Tous' }, ...MEAL_TYPES.map(mt => ({ id: mt, label: MEAL_LABELS[mt] }))].map(chip => (
-            <button
-              key={chip.id}
-              onClick={() => setFilter(chip.id)}
-              style={{
-                padding: '7px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
-                flexShrink: 0,
-                background: filter === chip.id ? '#007AFF' : '#F2F2F7',
-                color: filter === chip.id ? '#fff' : '#1C1C1E',
-                transition: 'background 0.15s, color 0.15s',
-              }}
-            >{chip.label}</button>
-          ))}
+        <div className="scroll" style={{ display: 'flex', gap: 8, padding: '0 16px 12px', overflowX: 'auto', flexShrink: 0 }}>
+          {[{ id: 'all', label: 'Tous', color: 'var(--primary)', soft: 'var(--primary-soft)', ink: 'var(--primary)' },
+            ...MEAL_LIST.map(m => ({ id: m.key, label: m.label, color: m.color, soft: m.soft, ink: m.ink }))].map(chip => {
+            const active = filter === chip.id
+            return (
+              <button key={chip.id} onClick={() => setFilter(chip.id)} className="chip"
+                style={{
+                  cursor: 'pointer', flexShrink: 0, border: 'none', fontWeight: 'var(--fw-semibold)',
+                  background: active ? chip.soft : 'var(--surface)',
+                  color: active ? chip.ink : 'var(--text-secondary)',
+                  boxShadow: active ? `inset 0 0 0 1.5px ${chip.color}` : 'inset 0 0 0 1px var(--border)',
+                }}>
+                {chip.label}
+              </button>
+            )
+          })}
         </div>
 
         {/* Recipe list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px', WebkitOverflowScrolling: 'touch' }}>
+        <div className="scroll" style={{ flex: 1, overflowY: 'auto', padding: '0 16px', WebkitOverflowScrolling: 'touch' }}>
           {allFlat.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#8E8E93' }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-              <p style={{ fontWeight: 600, fontSize: 16, color: '#1C1C1E' }}>Aucun résultat</p>
-              <p style={{ fontSize: 14, marginTop: 4, marginBottom: 24 }}>Essayez d'autres mots-clés</p>
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-tertiary)' }}>
+              <p style={{ fontWeight: 600, fontSize: 16, color: 'var(--text)' }}>Aucun résultat</p>
+              <p className="t-sub" style={{ marginTop: 4, marginBottom: 24 }}>Essayez d'autres mots-clés</p>
               {onCreateRecipe && (
-                <button
-                  onClick={() => { dismiss(); onCreateRecipe(mealType) }}
-                  style={{
-                    padding: '12px 24px', borderRadius: 14, border: '1.5px dashed #007AFF',
-                    background: '#EFF6FF', color: '#007AFF', fontSize: 15, fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                >+ Créer une nouvelle recette</button>
+                <button onClick={() => { dismiss(); onCreateRecipe(mealType) }} className="btn btn-secondary">
+                  <I.Plus size={16} /> Créer une nouvelle recette
+                </button>
               )}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingBottom: 8 }}>
               {onCreateRecipe && (
-                <button
-                  onClick={() => { dismiss(); onCreateRecipe(mealType) }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '12px 14px', borderRadius: 16,
-                    border: '1.5px dashed #007AFF', background: '#EFF6FF',
-                    cursor: 'pointer', textAlign: 'left',
-                  }}
-                >
-                  <div style={{
-                    width: 32, height: 32, borderRadius: 10,
-                    background: '#007AFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, fontSize: 20, color: '#fff', fontWeight: 300,
-                  }}>+</div>
+                <button onClick={() => { dismiss(); onCreateRecipe(mealType) }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 'var(--r-md)', border: 'none', background: 'var(--primary-soft)', boxShadow: 'inset 0 0 0 1.5px var(--primary)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+                  <span style={{ width: 32, height: 32, borderRadius: 'var(--r-sm)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--primary-ink)' }}><I.Plus size={18} sw={2.2} /></span>
                   <div>
-                    <p style={{ fontSize: 15, fontWeight: 600, color: '#007AFF', margin: 0 }}>Créer une nouvelle recette</p>
-                    <p style={{ fontSize: 12, color: '#636366', margin: '2px 0 0' }}>Ajouter une recette personnalisée</p>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--primary)', margin: 0 }}>Créer une nouvelle recette</p>
+                    <p className="t-caption tx-3" style={{ margin: '2px 0 0' }}>Ajouter une recette personnalisée</p>
                   </div>
                 </button>
               )}
@@ -245,75 +154,34 @@ export default function RecipePickerSheet({
                 const isSelected = selected.includes(recipe.id)
                 const isAdded = existingRecipes.some(r => r.id === recipe.id)
                 const isExpanded = expanded === recipe.id
-
+                const rMeal = MEALS[recipe.mealType] || MEALS.snack
                 return (
-                  <div
-                    key={recipe.id}
-                    style={{
-                      background: isSelected ? '#EFF6FF' : '#fff',
-                      borderRadius: 16,
-                      border: isSelected ? '1.5px solid #007AFF' : '1.5px solid #E5E5EA',
-                      overflow: 'hidden',
-                      opacity: isAdded ? 0.45 : 1,
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    <div
-                      onClick={() => !isAdded && toggleSelect(recipe)}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', cursor: isAdded ? 'default' : 'pointer' }}
-                    >
-                      {/* Checkmark circle */}
-                      <div style={{
-                        width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-                        background: (isSelected || isAdded) ? '#007AFF' : 'transparent',
-                        border: (isSelected || isAdded) ? 'none' : '2px solid #D1D1D6',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s',
-                      }}>
-                        {(isSelected || isAdded) && <CheckIcon />}
-                      </div>
-
-                      {/* Info */}
+                  <div key={recipe.id} style={{ background: isSelected ? rMeal.soft : 'var(--surface)', borderRadius: 'var(--r-md)', boxShadow: isSelected ? `inset 0 0 0 1.5px ${rMeal.color}` : 'inset 0 0 0 1px var(--hairline)', overflow: 'hidden', opacity: isAdded ? 0.45 : 1, transition: 'all 0.15s' }}>
+                    <div onClick={() => !isAdded && toggleSelect(recipe)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', cursor: isAdded ? 'default' : 'pointer' }}>
+                      <span className={`check${(isSelected || isAdded) ? ' is-checked' : ''}`}>
+                        {(isSelected || isAdded) && <I.Check size={13} sw={2.6} stroke="currentColor" />}
+                      </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontWeight: 600, fontSize: 15, color: '#1C1C1E', lineHeight: 1.3, margin: 0 }}>
+                        <p style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)', lineHeight: 1.3, margin: 0 }}>
                           {recipe.name}
-                          {isAdded && <span style={{ fontSize: 11, color: '#8E8E93', fontWeight: 400, marginLeft: 6 }}>déjà ajouté</span>}
+                          {isAdded && <span className="tx-3" style={{ fontSize: 11, fontWeight: 400, marginLeft: 6 }}>déjà ajouté</span>}
                         </p>
-                        <p style={{ fontSize: 12, color: '#8E8E93', margin: '2px 0 0' }}>
-                          {MEAL_LABELS[recipe.mealType]} · {recipe.ingredients?.length ?? 0} ingr.
-                          {recipe.createdBy && ` · ${recipe.createdBy}`}
+                        <p className="t-caption tx-3" style={{ margin: '2px 0 0' }}>
+                          {MEALS[recipe.mealType]?.label} · {recipe.ingredients?.length ?? 0} ingr.{recipe.createdBy ? ` · ${recipe.createdBy}` : ''}
                         </p>
                       </div>
-
-                      {/* Expand chevron */}
-                      <button
-                        onClick={e => { e.stopPropagation(); setExpanded(isExpanded ? null : recipe.id) }}
-                        style={{
-                          width: 32, height: 32, border: 'none', background: 'none',
-                          cursor: 'pointer', color: '#8E8E93', flexShrink: 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 13, transform: isExpanded ? 'rotate(180deg)' : 'none',
-                          transition: 'transform 0.2s',
-                        }}
-                      >▾</button>
+                      <button onClick={e => { e.stopPropagation(); setExpanded(isExpanded ? null : recipe.id) }} className="btn-icon" style={{ width: 32, height: 32, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                        <I.ChevD size={14} sw={2} />
+                      </button>
                     </div>
-
-                    {/* Ingredient preview */}
                     {isExpanded && (
-                      <div style={{ padding: '0 14px 12px', borderTop: '1px solid #F2F2F7' }}>
+                      <div style={{ padding: '0 14px 12px', borderTop: '1px solid var(--hairline)' }}>
                         <div style={{ paddingTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {recipe.ingredients?.slice(0, 10).map((ing, i) => (
-                            <span key={i} style={{
-                              fontSize: 12, background: '#F2F2F7', color: '#636366',
-                              padding: '3px 10px', borderRadius: 20,
-                            }}>
-                              {ing.ingredient}
-                            </span>
+                            <span key={i} className="chip" style={{ height: 26, fontSize: 12 }}>{ing.ingredient}</span>
                           ))}
                           {(recipe.ingredients?.length ?? 0) > 10 && (
-                            <span style={{ fontSize: 12, color: '#8E8E93', padding: '3px 6px' }}>
-                              +{recipe.ingredients.length - 10} autres
-                            </span>
+                            <span className="t-caption tx-3" style={{ padding: '3px 6px' }}>+{recipe.ingredients.length - 10} autres</span>
                           )}
                         </div>
                       </div>
@@ -325,29 +193,10 @@ export default function RecipePickerSheet({
           )}
         </div>
 
-        {/* Bottom CTA button */}
-        <div style={{
-          padding: '12px 16px',
-          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-          background: '#fff',
-          borderTop: '1px solid #F2F2F7',
-          flexShrink: 0,
-        }}>
-          <button
-            onClick={selected.length > 0 ? handleAdd : dismiss}
-            style={{
-              width: '100%', padding: '16px', borderRadius: 16,
-              border: 'none', cursor: 'pointer',
-              fontSize: 16, fontWeight: 700,
-              background: selected.length > 0 ? '#007AFF' : '#F2F2F7',
-              color: selected.length > 0 ? '#fff' : '#8E8E93',
-              transition: 'background 0.15s, color 0.15s',
-              letterSpacing: -0.2,
-            }}
-          >
-            {selected.length > 0
-              ? `Ajouter ${selected.length} recette${selected.length > 1 ? 's' : ''}`
-              : 'Fermer'}
+        {/* Bottom CTA */}
+        <div style={{ padding: '12px 16px', paddingBottom: 'max(16px, env(safe-area-inset-bottom))', background: 'var(--surface)', borderTop: '1px solid var(--hairline)', flexShrink: 0 }}>
+          <button onClick={selected.length > 0 ? handleAdd : dismiss} className={`btn btn-lg ${selected.length > 0 ? 'btn-primary' : 'btn-secondary'}`} style={{ width: '100%' }}>
+            {selected.length > 0 ? `Ajouter ${selected.length} recette${selected.length > 1 ? 's' : ''}` : 'Fermer'}
           </button>
         </div>
       </div>

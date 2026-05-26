@@ -5,8 +5,25 @@
  */
 export function parseLocalDate(dateStr) {
   if (!dateStr) return new Date(NaN)
-  const [year, month, day] = dateStr.split('-').map(Number)
+  const parts = dateStr.split('-').map(Number)
+  if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return new Date(NaN)
+  const [year, month, day] = parts
   return new Date(year, month - 1, day)
+}
+
+/**
+ * Label parts for the Nth day of a camp (0-based), in local time / fr-CA.
+ * @returns {{ weekday: string, day: number, month: string, full: string }}
+ */
+export function getDayLabel(startDate, dayIndex) {
+  const date = parseLocalDate(startDate)
+  date.setDate(date.getDate() + dayIndex)
+  return {
+    weekday: date.toLocaleDateString('fr-CA', { weekday: 'short' }),
+    day: date.getDate(),
+    month: date.toLocaleDateString('fr-CA', { month: 'short' }),
+    full: date.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' }),
+  }
 }
 
 // Ordered sections for the grocery list display
@@ -19,7 +36,7 @@ export const SECTION_ORDER = [
   'Varia - Congelés',
 ]
 
-// French food nouns that end in 's' in their singular form and must NOT be de-pluralized
+// French food nouns that are invariable (identical singular/plural) and must NOT be de-pluralized
 const INVARIABLE_FOODS = new Set([
   'riz', 'maïs', 'mais', 'ananas', 'cassis', 'radis', 'pois',
   'fenouil', 'céleri', 'celeri', 'brocolis', 'concombres',
@@ -110,16 +127,34 @@ function iterRecipes(slot) {
 }
 
 /**
+ * Resolve the headcount for a given day: a per-day override if set, else the global count.
+ * @param {number} numPeople - global headcount
+ * @param {Object} [numPeopleByDay] - sparse map { [dayIndex]: count }
+ */
+export function getPeopleForDay(numPeople, numPeopleByDay, dayIndex) {
+  const override = numPeopleByDay?.[dayIndex]
+  return override == null ? numPeople : override
+}
+
+/** True when at least one day has a headcount that differs from the global count. */
+export function hasPerDayOverrides(numPeople, numPeopleByDay) {
+  if (!numPeopleByDay) return false
+  return Object.values(numPeopleByDay).some((n) => n != null && n !== numPeople)
+}
+
+/**
  * Aggregates a meal plan into a structured grocery list.
  *
  * @param {Object} mealPlan - { [dayIndex]: { breakfast: recipe[], ... } }
- * @param {number} numPeople
+ * @param {number} numPeople - global headcount
+ * @param {Object} [numPeopleByDay] - sparse per-day overrides { [dayIndex]: count }
  * @returns {{ bySection: Object, sectionOrder: string[] }}
  */
-export function buildGroceryList(mealPlan, numPeople) {
+export function buildGroceryList(mealPlan, numPeople, numPeopleByDay) {
   const aggregated = new Map()
 
-  for (const dayMeals of Object.values(mealPlan)) {
+  for (const [dayIndex, dayMeals] of Object.entries(mealPlan)) {
+    const people = getPeopleForDay(numPeople, numPeopleByDay, dayIndex)
     for (const slot of Object.values(dayMeals)) {
       for (const recipe of iterRecipes(slot)) {
         for (const ingr of (recipe.ingredients ?? [])) {
@@ -134,7 +169,7 @@ export function buildGroceryList(mealPlan, numPeople) {
               totalAmount: 0,
             })
           }
-          aggregated.get(key).totalAmount += toBaseQty(ingr.portion, ingr.unit) * numPeople
+          aggregated.get(key).totalAmount += toBaseQty(ingr.portion, ingr.unit) * people
         }
       }
     }
@@ -171,7 +206,7 @@ export function getOrderedSections(bySection) {
  * Includes camp header, section subtotals, and total item count.
  */
 export function generateCSV(campSetup, mealPlan) {
-  const { bySection } = buildGroceryList(mealPlan, campSetup.numPeople)
+  const { bySection } = buildGroceryList(mealPlan, campSetup.numPeople, campSetup.numPeopleByDay)
   const sections = getOrderedSections(bySection)
   const esc = v => `"${String(v).replace(/"/g, '""')}"`
 
@@ -182,7 +217,9 @@ export function generateCSV(campSetup, mealPlan) {
   lines.push(esc(`Liste d'épicerie — ${campName}`))
   if (campSetup.startDate && campSetup.endDate) {
     const fmt = d => parseLocalDate(d).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long', year: 'numeric' })
-    lines.push(esc(`Dates: ${fmt(campSetup.startDate)} au ${fmt(campSetup.endDate)} — ${campSetup.numPeople} personne${campSetup.numPeople > 1 ? 's' : ''}`))
+    const variable = hasPerDayOverrides(campSetup.numPeople, campSetup.numPeopleByDay)
+    const people = `${campSetup.numPeople} personne${campSetup.numPeople > 1 ? 's' : ''}${variable ? ' (variable par jour)' : ''}`
+    lines.push(esc(`Dates: ${fmt(campSetup.startDate)} au ${fmt(campSetup.endDate)} — ${people}`))
   }
   lines.push('')
   lines.push(`${esc('Section')},${esc('Ingrédient')},${esc('Quantité')},${esc('Unité')}`)
@@ -200,7 +237,7 @@ export function generateCSV(campSetup, mealPlan) {
 
   lines.push(`${esc('')},${esc(`TOTAL: ${totalItems} article${totalItems > 1 ? 's' : ''}`)},${esc('')},${esc('')}`)
 
-  return '\ufeff' + lines.join('\n')
+  return '\ufeff' + lines.join('\r\n')
 }
 
 /**

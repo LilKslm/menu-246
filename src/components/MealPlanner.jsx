@@ -1,19 +1,11 @@
 import { useState, useEffect } from 'react'
-import { parseLocalDate } from '../utils/calculations'
-import RecipeBrowser from './RecipeBrowser'
-import MealCalendar from './MealCalendar'
-import RecipeDetails from './RecipeDetails'
+import { getDayLabel } from '../utils/calculations'
+import { MEAL_LIST } from '../shared/meals'
+import { I } from '../shared/icons.jsx'
 import RecipePickerSheet from './RecipePickerSheet'
 import AddRecipeModal from './AddRecipeModal'
 import DesktopPlanner from './DesktopPlanner'
 import Signature from './Signature'
-
-const MEAL_LABELS = {
-  breakfast: 'Déjeuner',
-  lunch: 'Dîner',
-  dinner: 'Souper',
-  snack: 'Collation',
-}
 
 export default function MealPlanner({
   recipes,
@@ -30,13 +22,8 @@ export default function MealPlanner({
   onNext,
   onBack,
 }) {
-  // ── Responsive: detect desktop vs mobile ──────────────────
-  const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== 'undefined' && window.innerWidth >= 768
-  )
-
-  // All hooks must be declared before any conditional return (Rules of Hooks)
-  const [activeTab, setActiveTab] = useState('calendar')
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 768)
+  const [activeDay, setActiveDay] = useState(0)
   const [pickerSlot, setPickerSlot] = useState(null)
   const [addModalMealType, setAddModalMealType] = useState(null)
 
@@ -49,10 +36,7 @@ export default function MealPlanner({
 
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') {
-        setAddModalMealType(null)
-        setPickerSlot(null)
-      }
+      if (e.key === 'Escape') { setAddModalMealType(null); setPickerSlot(null) }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -76,184 +60,108 @@ export default function MealPlanner({
   }
 
   // ── MOBILE layout ──────────────────────────────────────────
+  const { numDays, startDate } = campSetup
+  const days = Array.from({ length: numDays }, (_, i) => i)
 
   function handleSlotTap(dayIndex, mealType) {
-    const date = parseLocalDate(campSetup.startDate)
-    date.setDate(date.getDate() + dayIndex)
-    const dayLabel = date.toLocaleDateString('fr-CA', { weekday: 'long', day: 'numeric', month: 'long' })
-    setPickerSlot({ dayIndex, mealType, dayLabel })
+    setPickerSlot({ dayIndex, mealType, dayLabel: getDayLabel(startDate, dayIndex).full })
   }
 
   function handlePickerAdd(recipesToAdd) {
     if (!pickerSlot) return
     const { dayIndex, mealType } = pickerSlot
-    for (const recipe of recipesToAdd) {
-      onPlaceRecipe(dayIndex, mealType, recipe)
-    }
+    for (const recipe of recipesToAdd) onPlaceRecipe(dayIndex, mealType, recipe)
     setPickerSlot(null)
   }
 
-  function handleViewPlacedRecipe(recipe) {
-    onSelectRecipe(recipe)
-    setActiveTab('details')
-  }
-
   const filledCount = Object.values(mealPlan).reduce(
-    (total, day) => total + Object.values(day).filter(arr => Array.isArray(arr) ? arr.length > 0 : Boolean(arr)).length,
-    0
-  )
-  const totalSlots = campSetup.numDays * 4
-  const progress = totalSlots > 0 ? Math.round((filledCount / totalSlots) * 100) : 0
-
-  const calendarPanel = (
-    <MealCalendar
-      campSetup={campSetup}
-      mealPlan={mealPlan}
-      pendingRecipe={null}
-      onCellClick={() => {}}
-      onSlotTap={handleSlotTap}
-      onRemoveRecipe={onRemoveRecipe}
-      onViewRecipe={handleViewPlacedRecipe}
-    />
-  )
-
-  const browserPanel = (
-    <RecipeBrowser
-      recipes={recipes}
-      pendingRecipe={null}
-      viewedRecipe={selectedRecipe}
-      onSelectRecipe={onSelectRecipe}
-      onAddRecipe={onAddRecipe}
-      onEditRecipe={onEditRecipe}
-      onDeleteRecipe={onDeleteRecipe}
-      onDeleteLocal={onDeleteLocal}
-    />
-  )
-
-  const detailsPanel = (
-    <RecipeDetails
-      recipe={selectedRecipe}
-      numPeople={campSetup.numPeople}
-      pendingRecipe={null}
-      onSetPending={() => {}}
-      onEditRecipe={onEditRecipe}
-      onDeleteLocal={onDeleteLocal}
-    />
-  )
+    (total, day) => total + Object.values(day).filter(arr => Array.isArray(arr) ? arr.length > 0 : Boolean(arr)).length, 0)
+  const totalSlots = numDays * 4
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Mobile layout */}
-      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', background: '#F2F2F7' }}>
-
-        {/* Mobile header bar */}
-        <div style={{
-          background: 'rgba(255,255,255,0.92)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid rgba(0,0,0,0.06)',
-          padding: '10px 16px',
-          display: 'flex', alignItems: 'center', gap: 8,
-          flexShrink: 0,
-        }}>
-          <button
-            onClick={onBack}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#007AFF', fontSize: 15, fontWeight: 500, padding: '4px 0' }}
-          >← Retour</button>
-          <div style={{ flex: 1 }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 60, height: 5, borderRadius: 3, background: '#E5E5EA', overflow: 'hidden' }}>
-              <div style={{ width: `${progress}%`, height: '100%', background: '#007AFF', borderRadius: 3, transition: 'width 0.3s' }} />
-            </div>
-            <span style={{ fontSize: 12, color: '#636366', fontWeight: 600 }}>{filledCount}/{totalSlots}</span>
-          </div>
-          <button
-            onClick={onNext}
-            style={{
-              background: '#007AFF', color: '#fff', border: 'none', cursor: 'pointer',
-              padding: '8px 16px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-            }}
-          >Exporter →</button>
+    <div className="app" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', background: 'var(--bg)' }}>
+      {/* Chips row */}
+      <div style={{ display: 'flex', gap: 8, padding: '12px 16px 8px', alignItems: 'center' }}>
+        <div className="chip chip-strong" style={{ height: 28 }}>
+          <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{numDays}</span><span className="tx-3">j</span>
         </div>
+        <div className="chip chip-strong" style={{ height: 28 }}>
+          <span style={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{campSetup.numPeople}</span><span className="tx-3">pers.</span>
+        </div>
+        <span className="t-caption tx-3" style={{ marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>{filledCount}/{totalSlots}</span>
+      </div>
 
-        {/* Tab content */}
-        <div style={{ flex: 1, overflow: 'hidden' }}>
-          {activeTab === 'calendar' && (
-            <div style={{ height: '100%', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
-              {calendarPanel}
+      {/* Day tabs */}
+      <div className="scroll" style={{ display: 'flex', gap: 8, padding: '0 16px 12px', overflowX: 'auto', flexShrink: 0 }}>
+        {days.map(i => {
+          const lbl = getDayLabel(startDate, i)
+          const active = i === activeDay
+          return (
+            <button key={i} onClick={() => setActiveDay(i)} style={{
+              flex: '0 0 auto', border: 'none', borderRadius: 'var(--r-md)',
+              background: active ? 'var(--text)' : 'var(--surface)',
+              color: active ? 'var(--text-inverse)' : 'var(--text)',
+              boxShadow: active ? 'none' : 'inset 0 0 0 1px var(--hairline)',
+              padding: '8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+              cursor: 'pointer', fontFamily: 'inherit', minWidth: 56,
+            }}>
+              <span style={{ fontSize: 10, opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>{lbl.weekday}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{lbl.day}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Meal sections for selected day */}
+      <div className="scroll" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {MEAL_LIST.map(meal => {
+          const list = mealPlan[activeDay]?.[meal.key] ?? []
+          return (
+            <div key={meal.key}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ width: 26, height: 26, borderRadius: 'var(--r-sm)', background: meal.soft, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, lineHeight: 1 }}>{meal.emoji}</span>
+                <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>{meal.label}</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {list.map(recipe => (
+                  <div key={recipe.id} style={{ padding: '12px 14px', borderRadius: 'var(--r-md)', background: meal.soft, display: 'flex', alignItems: 'center', gap: 10, color: meal.ink, position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: meal.color }} />
+                    <div style={{ flex: 1, paddingLeft: 6, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{recipe.name}</div>
+                      {(recipe.isCustom || recipe.isShared) && recipe.createdBy && (
+                        <div style={{ fontSize: 12, opacity: 0.7, marginTop: 1 }}>{recipe.createdBy}</div>
+                      )}
+                    </div>
+                    <button onClick={() => onRemoveRecipe(activeDay, meal.key, recipe.id)} className="btn-icon" style={{ width: 28, height: 28, color: 'inherit' }} title="Retirer">
+                      <I.X size={15} />
+                    </button>
+                  </div>
+                ))}
+
+                <button onClick={() => handleSlotTap(activeDay, meal.key)} style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  padding: 14, borderRadius: 'var(--r-md)', border: 'none', cursor: 'pointer',
+                  background: 'var(--surface)', boxShadow: 'inset 0 0 0 1px var(--hairline)',
+                  color: 'var(--text-tertiary)', fontSize: 14, fontWeight: 500, fontFamily: 'inherit',
+                }}>
+                  <I.Plus size={16} sw={2} /> Ajouter une recette
+                </button>
+              </div>
             </div>
-          )}
-          {activeTab === 'browser' && (
-            <div style={{ height: '100%', background: '#fff', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              {browserPanel}
-            </div>
-          )}
-          {activeTab === 'details' && (
-            <div style={{ height: '100%', background: '#fff', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              {detailsPanel}
-            </div>
-          )}
+          )
+        })}
+
+        {/* Footer navigation */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <button onClick={onBack} className="btn btn-secondary" style={{ flex: 1 }}><I.ChevL size={16} /> Retour</button>
+          <button onClick={onNext} className="btn btn-primary" style={{ flex: 2 }}>Exporter <I.ChevR size={16} /></button>
         </div>
 
         <Signature />
-
-        {/* iOS-style bottom tab bar */}
-        <div style={{
-          background: 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(0,0,0,0.08)',
-          display: 'flex',
-          flexShrink: 0,
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}>
-          {[
-            { id: 'calendar', label: 'Calendrier', icon: (active) => (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="17" rx="3" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="1.8"/>
-                <path d="M3 9h18" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="1.8"/>
-                <path d="M8 2v4M16 2v4" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="1.8" strokeLinecap="round"/>
-                {active && <rect x="7" y="13" width="4" height="4" rx="1" fill="#007AFF"/>}
-              </svg>
-            )},
-            { id: 'browser', label: 'Recettes', icon: (active) => (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M4 6h16M4 10h16M4 14h10" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="1.8" strokeLinecap="round"/>
-                {active
-                  ? <circle cx="17" cy="17" r="4" fill="#007AFF"/>
-                  : <circle cx="17" cy="17" r="3" stroke="#8E8E93" strokeWidth="1.8"/>}
-                {active && <path d="M20.5 20.5l2 2" stroke="#007AFF" strokeWidth="1.8" strokeLinecap="round"/>}
-              </svg>
-            )},
-            { id: 'details', label: 'Détails', icon: (active) => (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="1.8"/>
-                <path d="M12 8v4M12 16v.5" stroke={active ? '#007AFF' : '#8E8E93'} strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            )},
-          ].map(tab => {
-            const active = activeTab === tab.id
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  flex: 1, border: 'none', background: 'none', cursor: 'pointer',
-                  padding: '10px 0 8px',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                }}
-              >
-                {tab.icon(active)}
-                <span style={{
-                  fontSize: 10, fontWeight: active ? 700 : 500,
-                  color: active ? '#007AFF' : '#8E8E93',
-                  letterSpacing: '-0.01em',
-                }}>{tab.label}</span>
-              </button>
-            )
-          })}
-        </div>
       </div>
 
-      {/* Mobile: RecipePickerSheet */}
+      {/* Bottom sheet */}
       {pickerSlot && (
         <RecipePickerSheet
           recipes={recipes}
@@ -266,14 +174,11 @@ export default function MealPlanner({
         />
       )}
 
-      {/* Mobile: Add recipe modal */}
+      {/* Create recipe modal */}
       {addModalMealType && (
         <AddRecipeModal
           defaultMealType={addModalMealType}
-          onSave={recipe => {
-            onAddRecipe(recipe)
-            setAddModalMealType(null)
-          }}
+          onSave={recipe => { onAddRecipe(recipe); setAddModalMealType(null) }}
           onClose={() => setAddModalMealType(null)}
         />
       )}

@@ -16,75 +16,23 @@ export default function ResumePrompt({ session, onResume, onDiscard }) {
   const peopleLabel = campSetup?.numPeople ? `${campSetup.numPeople} personnes` : ''
 
   return (
-    <div style={{
+    <div className="app" style={{
       position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(0,0,0,0.4)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24,
+      background: 'rgba(30, 22, 14, 0.42)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
     }}>
-      <div style={{
-        background: '#fff',
-        borderRadius: 20,
-        padding: '28px 24px 24px',
-        width: '100%', maxWidth: 360,
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-        textAlign: 'center',
-      }}>
-        {/* Icon */}
-        <div style={{
-          width: 56, height: 56, borderRadius: 16,
-          background: '#EFF6FF',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 28, margin: '0 auto 16px',
-        }}>
+      <div className="card" style={{ padding: '28px 24px 24px', width: '100%', maxWidth: 360, textAlign: 'center' }}>
+        <div style={{ width: 56, height: 56, borderRadius: 'var(--r-lg)', background: 'var(--primary-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>
           📋
         </div>
 
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: '#1C1C1E', margin: '0 0 6px' }}>
-          Reprendre le menu?
-        </h2>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', margin: '0 0 6px' }}>Reprendre le menu?</h2>
+        <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--primary)', margin: '0 0 4px' }}>{campLabel}</p>
+        <p className="t-sub tx-2" style={{ margin: '0 0 4px' }}>{[daysLabel, peopleLabel].filter(Boolean).join(' · ')}</p>
+        <p className="t-caption tx-3" style={{ margin: '0 0 24px' }}>Sauvegardé {savedLabel}</p>
 
-        <p style={{ fontSize: 15, fontWeight: 700, color: '#007AFF', margin: '0 0 4px' }}>
-          {campLabel}
-        </p>
-
-        <p style={{ fontSize: 13, color: '#636366', margin: '0 0 4px' }}>
-          {[daysLabel, peopleLabel].filter(Boolean).join(' · ')}
-        </p>
-
-        <p style={{ fontSize: 12, color: '#C7C7CC', margin: '0 0 24px' }}>
-          Sauvegardé {savedLabel}
-        </p>
-
-        {/* Buttons */}
-        <button
-          onClick={onResume}
-          style={{
-            width: '100%', padding: '14px', borderRadius: 14,
-            border: 'none', background: '#007AFF', color: '#fff',
-            fontSize: 15, fontWeight: 700, cursor: 'pointer',
-            marginBottom: 10, transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        >
-          Reprendre
-        </button>
-
-        <button
-          onClick={onDiscard}
-          style={{
-            width: '100%', padding: '14px', borderRadius: 14,
-            border: 'none', background: '#F2F2F7', color: '#1C1C1E',
-            fontSize: 15, fontWeight: 600, cursor: 'pointer',
-            transition: 'opacity 0.15s',
-          }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        >
-          Nouveau camp
-        </button>
+        <button onClick={onResume} className="btn btn-primary btn-lg" style={{ width: '100%', marginBottom: 10 }}>Reprendre</button>
+        <button onClick={onDiscard} className="btn btn-secondary btn-lg" style={{ width: '100%' }}>Nouveau camp</button>
       </div>
     </div>
   )

@@ -1,0 +1,119 @@
+/* ─────────────────────────────────────────────────────────
+   Menu 246 — "Hearth" design tokens
+   Warm campfire/cooking palette, Apple-minimal execution.
+   All colors in oklch; legacy fallbacks via hex comments.
+   ───────────────────────────────────────────────────────── */
+
+:root {
+  /* ── Typography ────────────────────────────────────── */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+               "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Type scale — SF Pro defaults; -0.01em→-0.025em tracking on display sizes */
+  --fs-display:  44px;   --lh-display:  1.08;  --tr-display:  -0.024em;
+  --fs-title-1: 32px;   --lh-title-1: 1.14;   --tr-title-1: -0.018em;
+  --fs-title-2: 24px;   --lh-title-2: 1.22;   --tr-title-2: -0.014em;
+  --fs-title-3: 20px;   --lh-title-3: 1.3;    --tr-title-3: -0.01em;
+  --fs-body:    17px;   --lh-body:    1.45;   --tr-body:    -0.005em;
+  --fs-sub:     15px;   --lh-sub:     1.4;    --tr-sub:     -0.003em;
+  --fs-caption: 13px;   --lh-caption: 1.4;    --tr-caption:  0em;
+  --fs-micro:   11px;   --lh-micro:   1.3;    --tr-micro:    0.04em;
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* ── Color · neutrals (warm-tinted) ────────────────── */
+  --bg:         oklch(0.985 0.006 75);   /* parchment */
+  --bg-elev:    oklch(0.99  0.004 75);   /* hovers, modals over bg */
+  --surface:    #ffffff;
+  --surface-2:  oklch(0.97  0.008 72);   /* recessed (planner cells, etc.) */
+  --surface-3:  oklch(0.945 0.01  68);   /* sidebars, deeper recesses */
+  --hairline:   oklch(0.925 0.011 68);
+  --border:     oklch(0.89  0.014 68);
+  --border-strong: oklch(0.82 0.02 65);
+
+  /* ── Color · text ──────────────────────────────────── */
+  --text:           oklch(0.22 0.018 55);  /* warm charcoal */
+  --text-secondary: oklch(0.46 0.022 55);
+  --text-tertiary:  oklch(0.62 0.018 60);
+  --text-placeholder: oklch(0.72 0.016 65);
+  --text-inverse:   oklch(0.985 0.006 75);
+
+  /* ── Color · primary (ember) ───────────────────────── */
+  --primary:        oklch(0.605 0.165 42);   /* glowing coal */
+  --primary-hover:  oklch(0.555 0.158 40);
+  --primary-press:  oklch(0.505 0.148 38);
+  --primary-soft:   oklch(0.96  0.04  55);
+  --primary-soft-2: oklch(0.92  0.06  50);
+  --primary-ink:    oklch(0.985 0.006 75);   /* text on primary */
+
+  /* ── Color · semantic ──────────────────────────────── */
+  --success:        oklch(0.6  0.11  148);
+  --success-soft:   oklch(0.95 0.035 148);
+  --error:          oklch(0.56 0.18  27);
+  --error-soft:     oklch(0.96 0.04  30);
+  --warning:        oklch(0.74 0.13  72);
+  --warning-soft:   oklch(0.96 0.05  82);
+
+  /* ── Color · meal accents (distinct hues for quick ID) ── */
+  --meal-dejeuner:       oklch(0.77 0.145 80);  /* golden · breakfast */
+  --meal-dejeuner-soft:  oklch(0.965 0.045 82);
+  --meal-dejeuner-ink:   oklch(0.42 0.09 72);
+
+  --meal-diner:          oklch(0.64 0.14 150);  /* green · lunch */
+  --meal-diner-soft:     oklch(0.955 0.04 150);
+  --meal-diner-ink:      oklch(0.36 0.08 152);
+
+  --meal-souper:         oklch(0.56 0.18 28);   /* red ember · dinner */
+  --meal-souper-soft:    oklch(0.955 0.045 30);
+  --meal-souper-ink:     oklch(0.34 0.11 28);
+
+  --meal-collation:      oklch(0.56 0.15 300);  /* violet · snack */
+  --meal-collation-soft: oklch(0.955 0.04 305);
+  --meal-collation-ink:  oklch(0.38 0.10 300);
+
+  /* ── Spacing scale (4px base) ──────────────────────── */
+  --space-0:  0px;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;
+  --space-11: 80px;
+
+  /* ── Radius ────────────────────────────────────────── */
+  --r-xs:   4px;
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   14px;
+  --r-xl:   20px;
+  --r-2xl:  28px;
+  --r-pill: 999px;
+
+  /* ── Shadow (warm-tinted) ──────────────────────────── */
+  --shadow-1: 0 1px 1px rgba(60, 38, 18, 0.04),
+              0 1px 2px rgba(60, 38, 18, 0.05);
+  --shadow-2: 0 1px 2px rgba(60, 38, 18, 0.05),
+              0 4px 12px rgba(60, 38, 18, 0.06);
+  --shadow-3: 0 2px 4px rgba(60, 38, 18, 0.06),
+              0 12px 28px rgba(60, 38, 18, 0.08);
+  --shadow-4: 0 6px 16px rgba(60, 38, 18, 0.10),
+              0 24px 56px rgba(60, 38, 18, 0.14);
+  --shadow-ember: 0 0 0 1px oklch(0.605 0.165 42 / 0.18),
+                  0 6px 18px oklch(0.605 0.165 42 / 0.22);
+  --ring-focus: 0 0 0 3px oklch(0.605 0.165 42 / 0.22);
+
+  /* ── Motion ────────────────────────────────────────── */
+  --ease-out:  cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+}

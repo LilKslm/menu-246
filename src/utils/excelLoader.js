@@ -1,3 +1,5 @@
+import { MEAL_LABELS } from '../shared/meals'
+
 // xlsx is lazy-loaded on first call to avoid blocking initial render
 let _XLSX = null
 async function getXLSX() {
@@ -302,18 +304,6 @@ export function loadImportedRecipes(baseRecipes) {
 }
 
 /**
- * Returns all custom recipes as a flat array.
- */
-export function getAllCustomRecipes() {
-  try {
-    const stored = localStorage.getItem('scoutMenuCustomRecipes')
-    return stored ? JSON.parse(stored) : []
-  } catch {
-    return []
-  }
-}
-
-/**
  * Exports all custom + imported recipes as a JSON string (downloadable).
  * Format: { breakfast: [...], lunch: [...], dinner: [...], snack: [...] }
  */
@@ -335,7 +325,6 @@ export function exportRecipesAsCSV(recipes) {
   const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`
   const lines = ['\ufeff' + [esc('Type de repas'), esc('Recette'), esc('Ingrédient'), esc('Section'), esc('Portion'), esc('Unité')].join(',')]
 
-  const MEAL_LABELS = { breakfast: 'Déjeuner', lunch: 'Dîner', dinner: 'Souper', snack: 'Collation' }
   for (const [mealType, recipeList] of Object.entries(recipes)) {
     for (const recipe of recipeList.filter(r => r.isCustom || r.isImported)) {
       for (const ingr of recipe.ingredients) {

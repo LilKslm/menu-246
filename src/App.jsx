@@ -10,18 +10,17 @@ import SaveMenuButton from './components/SaveMenuButton'
 import UpdateNotification from './components/UpdateNotification'
 import FeedbackButton from './components/FeedbackButton'
 import appLogoUrl from './assets/app-logo.jpg'
+import { I } from './shared/icons.jsx'
+import { MEAL_TYPES } from './shared/meals'
 import './App.css'
 
 const SESSION_KEY = 'scout_session_v1'
 
-export const STEPS = { SETUP: 0, PLAN: 1, OUTPUT: 2 }
+const STEPS = { SETUP: 0, PLAN: 1, OUTPUT: 2 }
 
-export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
-export const MEAL_LABELS = {
-  breakfast: 'Déjeuner',
-  lunch: 'Dîner',
-  dinner: 'Souper',
-  snack: 'Collation',
+// Ensure a campSetup loaded from an older session/import has the per-day field.
+function normalizeCampSetup(setup) {
+  return { numPeopleByDay: {}, ...setup }
 }
 
 function createEmptyMealPlan(numDays) {
@@ -61,6 +60,7 @@ export default function App() {
     endDate: '',
     numPeople: 10,
     numDays: 0,
+    numPeopleByDay: {},
   })
 
   const [mealPlan, setMealPlan] = useState({})
@@ -101,7 +101,7 @@ export default function App() {
 
   function handleResume() {
     if (!pendingSession) return
-    setCampSetup(pendingSession.campSetup)
+    setCampSetup(normalizeCampSetup(pendingSession.campSetup))
     setMealPlan(pendingSession.mealPlan)
     setStep(STEPS.PLAN)
     setShowResume(false)
@@ -115,19 +115,20 @@ export default function App() {
   }
 
   function handleImportMenu(importedCampSetup, importedMealPlan) {
-    setCampSetup(importedCampSetup)
+    const normalized = normalizeCampSetup(importedCampSetup)
+    setCampSetup(normalized)
     setMealPlan(importedMealPlan)
     setStep(STEPS.PLAN)
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify({
-        version: 1, campSetup: importedCampSetup, mealPlan: importedMealPlan, savedAt: new Date().toISOString(),
+        version: 1, campSetup: normalized, mealPlan: importedMealPlan, savedAt: new Date().toISOString(),
       }))
     } catch {}
   }
 
   function handleClearProgress() {
     localStorage.removeItem(SESSION_KEY)
-    setCampSetup({ campName: '', startDate: '', endDate: '', numPeople: 10, numDays: 0 })
+    setCampSetup({ campName: '', startDate: '', endDate: '', numPeople: 10, numDays: 0, numPeopleByDay: {} })
     setMealPlan({})
     setStep(STEPS.SETUP)
   }
@@ -167,9 +168,10 @@ export default function App() {
   }, [baseRecipes, sharedRecipes, hiddenIds])
 
   function handleCampSetupComplete(setup) {
-    if (campSetup.numDays !== setup.numDays) {
-      setMealPlan(createEmptyMealPlan(setup.numDays))
-    }
+    // Reset the plan whenever the day count changes (functional updater avoids stale state)
+    setMealPlan(prev =>
+      Object.keys(prev).length !== setup.numDays ? createEmptyMealPlan(setup.numDays) : prev
+    )
     setCampSetup(setup)
     setStep(STEPS.PLAN)
   }
@@ -203,7 +205,7 @@ export default function App() {
       if (!prev) return prev
       return {
         ...prev,
-        [newRecipe.mealType]: [...prev[newRecipe.mealType], newRecipe].sort((a, b) =>
+        [newRecipe.mealType]: [...(prev[newRecipe.mealType] || []), newRecipe].sort((a, b) =>
           a.name.localeCompare(b.name, 'fr')
         ),
       }
@@ -256,7 +258,7 @@ export default function App() {
     setBaseRecipes(prev => {
       if (!prev) return prev
       const updated = { ...prev }
-      for (const mt of ['breakfast', 'lunch', 'dinner', 'snack']) {
+      for (const mt of MEAL_TYPES) {
         updated[mt] = (prev[mt] || []).filter(r => r.id !== recipe.id)
       }
       return updated
@@ -275,69 +277,65 @@ export default function App() {
 
   const stepLabels = ['Configuration', 'Planification', 'Exportation']
 
+  const hasOverrides = Object.values(campSetup.numPeopleByDay || {}).some(n => n != null && n !== campSetup.numPeople)
+
   return (
-    <div className="min-h-screen bg-apple-gray font-sans flex flex-col">
+    <div className="app" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       {/* Top navigation bar */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-apple-gray-2 sticky top-0 z-50 no-print">
-        <div className="max-w-screen-2xl mx-auto px-4 md:px-6 py-3 flex items-center relative" style={{ paddingLeft: '20px' }}>
+      <header className="no-print" style={{
+        position: 'sticky', top: 0, zIndex: 50,
+        background: 'oklch(0.99 0.004 75 / 0.85)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+        borderBottom: '1px solid var(--hairline)',
+      }}>
+        <div style={{ maxWidth: 1536, margin: '0 auto', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', position: 'relative' }}>
           <button
             onClick={() => step > STEPS.SETUP && setStep(STEPS.SETUP)}
-            className={`flex items-center gap-2.5 ${step > STEPS.SETUP ? 'cursor-pointer hover:opacity-80 active:opacity-60' : 'cursor-default'} transition-opacity`}
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', border: 'none', background: 'transparent', padding: 0, cursor: step > STEPS.SETUP ? 'pointer' : 'default' }}
           >
-            <img src={appLogoUrl} alt="Menu 246" className="w-9 h-9 object-cover rounded-xl flex-shrink-0" />
-            <div className="text-left">
-              <h1 className="text-sm font-bold text-apple-dark leading-tight">Menu 246</h1>
-              {campSetup.campName && (
-                <p className="text-xs text-apple-secondary leading-none">{campSetup.campName}</p>
-              )}
+            <img src={appLogoUrl} alt="Menu 246" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 'var(--r-md)', flexShrink: 0, boxShadow: 'var(--shadow-1)' }} />
+            <div style={{ textAlign: 'left', lineHeight: 1.15 }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.01em' }}>Menu 246</div>
+              {campSetup.campName && <div className="t-caption tx-3">{campSetup.campName}</div>}
             </div>
           </button>
 
-          {/* Step indicator — absolutely centered relative to header */}
-          <nav className="hidden sm:flex items-center gap-1 absolute left-1/2 -translate-x-1/2">
-            {stepLabels.map((label, idx) => (
-              <div key={idx} className="flex items-center gap-1">
-                {idx > 0 && (
-                  <div className={`w-6 h-px ${idx <= step ? 'bg-apple-blue' : 'bg-apple-gray-3'}`} />
-                )}
-                <button
+          {/* Step indicator — centered */}
+          <nav className="steps hide-sm" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+            {stepLabels.map((label, idx) => {
+              const cls = idx < step ? 'is-done' : idx === step ? 'is-active' : ''
+              return (
+                <div
+                  key={label}
+                  className={`step ${cls}`}
                   onClick={() => { if (idx < step) setStep(idx) }}
-                  disabled={idx > step}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
-                    idx === step
-                      ? 'bg-apple-blue text-white'
-                      : idx < step
-                      ? 'text-apple-blue hover:bg-apple-gray cursor-pointer'
-                      : 'text-apple-gray-3 cursor-default'
-                  }`}
+                  style={{ cursor: idx < step ? 'pointer' : 'default' }}
                 >
-                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${idx < step ? 'bg-apple-blue text-white' : ''}`}>
-                    {idx < step ? '✓' : idx + 1}
-                  </span>
-                  <span className="hidden md:inline">{label}</span>
-                </button>
-              </div>
-            ))}
+                  <span className="step-num">{idx < step ? '✓' : idx + 1}</span>
+                  <span className="hide-sm">{label}</span>
+                </div>
+              )
+            })}
           </nav>
 
           {/* Camp info chips + recipe mgmt + save */}
-          <div className="ml-auto flex items-center gap-2 relative z-10">
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 'var(--space-2)', position: 'relative', zIndex: 10 }}>
             {step >= STEPS.PLAN && (
               <>
-                <span className="badge bg-apple-gray text-apple-dark hidden sm:inline-flex">
-                  {campSetup.numDays}j
-                </span>
-                <span className="badge bg-apple-gray text-apple-dark hidden sm:inline-flex">
-                  {campSetup.numPeople} pers.
-                </span>
+                <div className="chip chip-strong hide-sm">
+                  <span style={{ fontWeight: 'var(--fw-semibold)', fontVariantNumeric: 'tabular-nums' }}>{campSetup.numDays}</span>
+                  <span className="tx-3">j</span>
+                </div>
+                <div className="chip chip-strong hide-sm">
+                  <span style={{ fontWeight: 'var(--fw-semibold)', fontVariantNumeric: 'tabular-nums' }}>{campSetup.numPeople}</span>
+                  <span className="tx-3">pers.{hasOverrides ? '*' : ''}</span>
+                </div>
               </>
             )}
-            <button
-              onClick={() => setShowRecipeMgmt(true)}
-              className="btn-ghost text-xs text-apple-secondary gap-1 flex"
-              title="Gérer les recettes"
-            >
-              📚 <span className="hidden sm:inline">Recettes</span>
+            <button onClick={() => setShowRecipeMgmt(true)} className="btn btn-secondary btn-sm" title="Gérer les recettes">
+              <I.Book size={16} />
+              <span className="hide-sm">Recettes</span>
             </button>
             <FeedbackButton />
             {step >= STEPS.PLAN && (
@@ -353,7 +351,7 @@ export default function App() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col overflow-hidden">
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {step === STEPS.SETUP && (
           <CampSetup
             initial={campSetup}
