@@ -5,8 +5,19 @@ import crypto from 'crypto'
 import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const TOKEN = 'nfc_XNZt2SapHZHNX4TeyJ5zVMz1SKH39jdVa576'
-const SITE_ID = '6c3762a4-59e2-4753-a476-e764924c8310'
+const TOKEN = process.env.NETLIFY_AUTH_TOKEN
+const SITE_ID = process.env.NETLIFY_SITE_ID || '6c3762a4-59e2-4753-a476-e764924c8310'
+
+if (!TOKEN) {
+  console.error([
+    'Missing NETLIFY_AUTH_TOKEN environment variable.',
+    'Create a Netlify personal access token (Netlify → User settings → Applications → Personal access tokens),',
+    'then run with it set, e.g.:',
+    '  PowerShell:  $env:NETLIFY_AUTH_TOKEN = "<token>"; npm run deploy',
+    '  bash/zsh:    NETLIFY_AUTH_TOKEN=<token> npm run deploy',
+  ].join('\n'))
+  process.exit(1)
+}
 
 function getAllFiles(dir, base = dir) {
   const files = {}
